@@ -1,0 +1,17 @@
+{
+  "name": "csw-scraper",
+  "version": "0.1.0",
+  "description": "CSW catalogue scraper - works in Node.js and Cloudflare Workers",
+  "type": "module",
+  "main": "csw-client.js",
+  "scripts": {
+    "cli": "node node-cli.js",
+    "examples": "node examples.js"
+  },
+  "dependencies": {
+    "sax": "^1.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
