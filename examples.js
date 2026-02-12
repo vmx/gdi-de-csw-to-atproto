@@ -16,7 +16,7 @@ import {
 // ============================================================================
 // Example 1: Simple one-shot fetch
 // ============================================================================
-async function exampleSimpleFetch () {
+const exampleSimpleFetch = async () => {
   console.log('=== Example 1: Simple Fetch ===\n')
 
   const result = await fetchAllRecords({
@@ -34,7 +34,7 @@ async function exampleSimpleFetch () {
 // ============================================================================
 // Example 2: Pagination with progress callback
 // ============================================================================
-async function exampleWithProgress () {
+const exampleWithProgress = async () => {
   console.log('=== Example 2: Fetch with Progress ===\n')
 
   const result = await fetchAllRecords({
@@ -53,7 +53,7 @@ async function exampleWithProgress () {
 // ============================================================================
 // Example 3: Using the async generator for memory efficiency
 // ============================================================================
-async function exampleGenerator () {
+const exampleGenerator = async () => {
   console.log('=== Example 3: Async Generator ===\n')
 
   const generator = fetchRecordsGenerator({
@@ -84,7 +84,7 @@ async function exampleGenerator () {
  * This is a sketch of how you might use the client in a cron-like scraping setup.
  * You would implement loadState/saveState to persist to a file, database, or KV store.
  */
-async function exampleScrapingWorkflow () {
+const exampleScrapingWorkflow = async () => {
   console.log('=== Example 4: Scraping Workflow ===\n')
 
   // In a real implementation, you'd load this from persistent storage
@@ -141,7 +141,7 @@ async function exampleScrapingWorkflow () {
 // ============================================================================
 // Example 5: Single page fetch (for manual pagination control)
 // ============================================================================
-async function exampleSinglePage () {
+const exampleSinglePage = async () => {
   console.log('=== Example 5: Single Page Fetch ===\n')
 
   // Fetch first page
@@ -171,7 +171,7 @@ async function exampleSinglePage () {
 // ============================================================================
 // Run examples
 // ============================================================================
-async function runExamples () {
+const runExamples = async () => {
   try {
     await exampleSimpleFetch()
     await exampleWithProgress()

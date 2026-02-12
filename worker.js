@@ -92,7 +92,7 @@ export default {
   },
 }
 
-function jsonResponse (data, status = 200) {
+const jsonResponse = (data, status = 200) => {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {

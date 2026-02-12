@@ -17,7 +17,7 @@ const DEFAULT_MAX_RECORDS = 100
  * @param {number} options.startPosition - Starting position for pagination (1-based)
  * @returns {string} XML request body
  */
-function buildGetRecordsXml ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, startPosition = 1 }) {
+const buildGetRecordsXml = ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, startPosition = 1 }) => {
   return `<?xml version="1.0"?>
 <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" service="CSW" version="2.0.2" resultType="results" outputSchema="http://www.isotc211.org/2005/gmd" maxRecords="${maxRecords}" startPosition="${startPosition}">
   <csw:Query typeNames="csw:Record">
@@ -45,7 +45,7 @@ function buildGetRecordsXml ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, star
  * @param {string} name - Tag name potentially with namespace
  * @returns {string} Tag name without namespace prefix
  */
-function stripNs (name) {
+const stripNs = (name) => {
   const colonIndex = name.indexOf(':')
   return colonIndex >= 0 ? name.slice(colonIndex + 1) : name
 }
@@ -55,7 +55,7 @@ function stripNs (name) {
  * @param {string} xmlText - Raw XML response
  * @returns {Promise<Object>} Parsed result with pagination info and records
  */
-function parseGetRecordsResponse (xmlText) {
+const parseGetRecordsResponse = (xmlText) => {
   return new Promise((resolve, reject) => {
     const parser = sax.parser(true, { trim: true, normalize: true })
 
@@ -168,12 +168,12 @@ function parseGetRecordsResponse (xmlText) {
  * @param {number} options.startPosition - Starting position (1-based)
  * @returns {Promise<Object>} Result with records array and pagination info
  */
-async function fetchPage ({
+const fetchPage = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
-}) {
+}) => {
   const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition })
 
   const response = await fetch(endpoint, {
@@ -212,13 +212,13 @@ async function fetchPage ({
  * @param {Function} options.onPage - Optional callback called after each page: (pageResult, pageNumber) => void
  * @returns {Promise<Object>} Result with all records and summary
  */
-async function fetchAllRecords ({
+const fetchAllRecords = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
   onPage = null,
-}) {
+}) => {
   const allRecords = []
   let startPosition = 1
   let pageNumber = 0
@@ -273,7 +273,7 @@ async function fetchAllRecords ({
  * @param {Object} options - Same as fetchAllRecords
  * @yields {Object} Page result with records and pagination info
  */
-async function * fetchRecordsGenerator ({
+const fetchRecordsGenerator = async function * ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,

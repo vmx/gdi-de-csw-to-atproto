@@ -18,7 +18,7 @@
 import { fetchAllRecords, fetchRecordsGenerator, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
 import { writeFile } from 'fs/promises'
 
-async function main () {
+const main = async () => {
   const args = parseArgs(process.argv.slice(2))
 
   if (args.help || !args.startDate) {
@@ -100,7 +100,7 @@ async function main () {
   }
 }
 
-function parseArgs (argv) {
+const parseArgs = (argv) => {
   const args = {}
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
@@ -119,7 +119,7 @@ function parseArgs (argv) {
   return args
 }
 
-function printUsage () {
+const printUsage = () => {
   console.log(`
 CSW Client - Fetch records from a CSW catalogue service
 
