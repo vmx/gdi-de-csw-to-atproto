@@ -267,57 +267,8 @@ const fetchAllRecords = async ({
   }
 }
 
-/**
- * Create an async generator that yields records page by page
- * Useful for processing large result sets without loading all into memory
- * @param {Object} options - Same as fetchAllRecords
- * @yields {Object} Page result with records and pagination info
- */
-const fetchRecordsGenerator = async function * ({
-  endpoint = DEFAULT_CSW_ENDPOINT,
-  startDate,
-  maxRecordsPerPage = DEFAULT_MAX_RECORDS,
-  maxTotalRecords = Infinity,
-}) {
-  let startPosition = 1
-  let fetchedCount = 0
-
-  while (fetchedCount < maxTotalRecords) {
-    const pageResult = await fetchPage({
-      endpoint,
-      startDate,
-      maxRecords: Math.min(maxRecordsPerPage, maxTotalRecords - fetchedCount),
-      startPosition,
-    })
-
-    fetchedCount += pageResult.records.length
-    yield pageResult
-
-    if (!pageResult.pagination.hasMore) {
-      break
-    }
-
-    startPosition = pageResult.pagination.nextRecord
-  }
-}
-
-// Export for ES modules
 export {
   DEFAULT_CSW_ENDPOINT,
-  DEFAULT_MAX_RECORDS,
-  buildGetRecordsXml,
-  parseGetRecordsResponse,
   fetchPage,
   fetchAllRecords,
-  fetchRecordsGenerator,
-}
-
-export default {
-  DEFAULT_CSW_ENDPOINT,
-  DEFAULT_MAX_RECORDS,
-  buildGetRecordsXml,
-  parseGetRecordsResponse,
-  fetchPage,
-  fetchAllRecords,
-  fetchRecordsGenerator,
 }

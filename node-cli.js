@@ -15,7 +15,7 @@
  *   --outfile       Write results to file instead of stdout
  */
 
-import { fetchAllRecords, fetchRecordsGenerator, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
+import { fetchAllRecords, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
 import { writeFile } from 'fs/promises'
 
 const main = async () => {
