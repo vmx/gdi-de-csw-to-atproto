@@ -2,7 +2,7 @@
 
 /**
  * Node.js Entry Point (CLI)
- * 
+ *
  * Usage:
  *   node node-cli.js --start-date 2026-01-21T00:00:00Z [options]
  *
@@ -15,15 +15,15 @@
  *   --outfile       Write results to file instead of stdout
  */
 
-import { fetchAllRecords, fetchRecordsGenerator, DEFAULT_CSW_ENDPOINT } from './csw-client.js';
-import { writeFile } from 'fs/promises';
+import { fetchAllRecords, fetchRecordsGenerator, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
+import { writeFile } from 'fs/promises'
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+async function main () {
+  const args = parseArgs(process.argv.slice(2))
 
   if (args.help || !args.startDate) {
-    printUsage();
-    process.exit(args.help ? 0 : 1);
+    printUsage()
+    process.exit(args.help ? 0 : 1)
   }
 
   const options = {
@@ -31,15 +31,15 @@ async function main() {
     startDate: args.startDate,
     maxRecordsPerPage: parseInt(args.maxRecords || '100', 10),
     maxTotalRecords: args.maxTotal ? parseInt(args.maxTotal, 10) : Infinity,
-  };
-
-  console.error(`Fetching CSW records since ${options.startDate}...`);
-  console.error(`Endpoint: ${options.endpoint}`);
-  console.error(`Max records per page: ${options.maxRecordsPerPage}`);
-  if (options.maxTotalRecords !== Infinity) {
-    console.error(`Max total records: ${options.maxTotalRecords}`);
   }
-  console.error('');
+
+  console.error(`Fetching CSW records since ${options.startDate}...`)
+  console.error(`Endpoint: ${options.endpoint}`)
+  console.error(`Max records per page: ${options.maxRecordsPerPage}`)
+  if (options.maxTotalRecords !== Infinity) {
+    console.error(`Max total records: ${options.maxTotalRecords}`)
+  }
+  console.error('')
 
   const result = await fetchAllRecords({
     ...options,
@@ -47,18 +47,18 @@ async function main() {
       console.error(
         `Page ${pageNumber}: fetched ${pageResult.records.length} records ` +
         `(${pageResult.pagination.totalMatched} total matched)`
-      );
+      )
     },
-  });
+  })
 
-  console.error('');
-  console.error(`Done! Fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records.`);
-  console.error(`Latest dateStamp: ${result.summary.latestDateStamp || 'N/A'}`);
-  console.error('');
+  console.error('')
+  console.error(`Done! Fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records.`)
+  console.error(`Latest dateStamp: ${result.summary.latestDateStamp || 'N/A'}`)
+  console.error('')
 
   // Format output based on --output flag
-  let output;
-  const outputFormat = args.output || 'summary';
+  let output
+  const outputFormat = args.output || 'summary'
 
   switch (outputFormat) {
     case 'json':
@@ -71,13 +71,13 @@ async function main() {
           // Include XML if --include-xml flag is set
           ...(args.includeXml ? { xml: r.xml } : {}),
         })),
-      }, null, 2);
-      break;
+      }, null, 2)
+      break
 
     case 'ids':
       // Just the file identifiers, one per line
-      output = result.records.map((r) => r.fileIdentifier).join('\n');
-      break;
+      output = result.records.map((r) => r.fileIdentifier).join('\n')
+      break
 
     case 'summary':
     default:
@@ -88,38 +88,38 @@ async function main() {
           fileIdentifier: r.fileIdentifier,
           dateStamp: r.dateStamp,
         })),
-      }, null, 2);
-      break;
+      }, null, 2)
+      break
   }
 
   if (args.outfile) {
-    await writeFile(args.outfile, output, 'utf-8');
-    console.error(`Results written to ${args.outfile}`);
+    await writeFile(args.outfile, output, 'utf-8')
+    console.error(`Results written to ${args.outfile}`)
   } else {
-    console.log(output);
+    console.log(output)
   }
 }
 
-function parseArgs(argv) {
-  const args = {};
+function parseArgs (argv) {
+  const args = {}
   for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+    const arg = argv[i]
     if (arg.startsWith('--')) {
       // Convert kebab-case to camelCase for internal use
-      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
       // Check if next arg is a value or another flag
       if (i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
-        args[key] = argv[i + 1];
-        i++;
+        args[key] = argv[i + 1]
+        i++
       } else {
-        args[key] = true;
+        args[key] = true
       }
     }
   }
-  return args;
+  return args
 }
 
-function printUsage() {
+function printUsage () {
   console.log(`
 CSW Client - Fetch records from a CSW catalogue service
 
@@ -147,10 +147,10 @@ Examples:
 
   # Just get file identifiers
   node node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
-`);
+`)
 }
 
 main().catch((error) => {
-  console.error('Error:', error.message);
-  process.exit(1);
-});
+  console.error('Error:', error.message)
+  process.exit(1)
+})

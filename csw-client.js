@@ -4,10 +4,10 @@
  * Uses SAX streaming parser for memory efficiency
  */
 
-import sax from 'sax';
+import sax from 'sax'
 
-const DEFAULT_CSW_ENDPOINT = 'https://gdk.gdi-de.org/geonetwork/srv/eng/csw';
-const DEFAULT_MAX_RECORDS = 100;
+const DEFAULT_CSW_ENDPOINT = 'https://gdk.gdi-de.org/geonetwork/srv/eng/csw'
+const DEFAULT_MAX_RECORDS = 100
 
 /**
  * Build the XML request body for CSW GetRecords
@@ -17,7 +17,7 @@ const DEFAULT_MAX_RECORDS = 100;
  * @param {number} options.startPosition - Starting position for pagination (1-based)
  * @returns {string} XML request body
  */
-function buildGetRecordsXml({ startDate, maxRecords = DEFAULT_MAX_RECORDS, startPosition = 1 }) {
+function buildGetRecordsXml ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, startPosition = 1 }) {
   return `<?xml version="1.0"?>
 <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" service="CSW" version="2.0.2" resultType="results" outputSchema="http://www.isotc211.org/2005/gmd" maxRecords="${maxRecords}" startPosition="${startPosition}">
   <csw:Query typeNames="csw:Record">
@@ -37,7 +37,7 @@ function buildGetRecordsXml({ startDate, maxRecords = DEFAULT_MAX_RECORDS, start
       </ogc:SortProperty>
     </ogc:SortBy>
   </csw:Query>
-</csw:GetRecords>`;
+</csw:GetRecords>`
 }
 
 /**
@@ -45,9 +45,9 @@ function buildGetRecordsXml({ startDate, maxRecords = DEFAULT_MAX_RECORDS, start
  * @param {string} name - Tag name potentially with namespace
  * @returns {string} Tag name without namespace prefix
  */
-function stripNs(name) {
-  const colonIndex = name.indexOf(':');
-  return colonIndex >= 0 ? name.slice(colonIndex + 1) : name;
+function stripNs (name) {
+  const colonIndex = name.indexOf(':')
+  return colonIndex >= 0 ? name.slice(colonIndex + 1) : name
 }
 
 /**
@@ -55,9 +55,9 @@ function stripNs(name) {
  * @param {string} xmlText - Raw XML response
  * @returns {Promise<Object>} Parsed result with pagination info and records
  */
-function parseGetRecordsResponse(xmlText) {
+function parseGetRecordsResponse (xmlText) {
   return new Promise((resolve, reject) => {
-    const parser = sax.parser(true, { trim: true, normalize: true });
+    const parser = sax.parser(true, { trim: true, normalize: true })
 
     const result = {
       pagination: {
@@ -67,68 +67,68 @@ function parseGetRecordsResponse(xmlText) {
         hasMore: false,
       },
       records: [],
-    };
+    }
 
     // State tracking
-    let currentRecord = null;
-    let currentPath = [];
-    let textBuffer = '';
+    let currentRecord = null
+    let currentPath = []
+    let textBuffer = ''
 
     parser.onerror = (err) => {
-      reject(new Error(`XML parsing error: ${err.message}`));
-    };
+      reject(new Error(`XML parsing error: ${err.message}`))
+    }
 
     parser.onopentag = (node) => {
-      const tagName = stripNs(node.name);
-      currentPath.push(tagName);
-      textBuffer = '';
+      const tagName = stripNs(node.name)
+      currentPath.push(tagName)
+      textBuffer = ''
 
       if (tagName === 'SearchResults') {
         // Extract pagination from attributes
-        const attrs = node.attributes;
+        const attrs = node.attributes
         for (const [key, value] of Object.entries(attrs)) {
-          const attrName = stripNs(key);
+          const attrName = stripNs(key)
           if (attrName === 'numberOfRecordsMatched') {
-            result.pagination.numberOfRecordsMatched = parseInt(value, 10);
+            result.pagination.numberOfRecordsMatched = parseInt(value, 10)
           } else if (attrName === 'numberOfRecordsReturned') {
-            result.pagination.numberOfRecordsReturned = parseInt(value, 10);
+            result.pagination.numberOfRecordsReturned = parseInt(value, 10)
           } else if (attrName === 'nextRecord') {
-            result.pagination.nextRecord = parseInt(value, 10);
+            result.pagination.nextRecord = parseInt(value, 10)
           }
         }
         result.pagination.hasMore =
           result.pagination.nextRecord > 0 &&
-          result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched;
+          result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched
       } else if (tagName === 'MD_Metadata') {
         // Start a new record
         currentRecord = {
           fileIdentifier: null,
           dateStamp: null,
           title: null,
-        };
+        }
       }
-    };
+    }
 
     parser.ontext = (text) => {
-      textBuffer += text;
-    };
+      textBuffer += text
+    }
 
     parser.oncdata = (cdata) => {
-      textBuffer += cdata;
-    };
+      textBuffer += cdata
+    }
 
     parser.onclosetag = (name) => {
-      const tagName = stripNs(name);
-      const pathStr = currentPath.join('/');
+      const tagName = stripNs(name)
+      const pathStr = currentPath.join('/')
 
       if (currentRecord) {
         // Extract fileIdentifier
         if (pathStr.endsWith('fileIdentifier/CharacterString')) {
-          currentRecord.fileIdentifier = textBuffer.trim();
+          currentRecord.fileIdentifier = textBuffer.trim()
         }
         // Extract dateStamp (can be Date or DateTime)
         else if (pathStr.endsWith('dateStamp/DateTime') || pathStr.endsWith('dateStamp/Date')) {
-          currentRecord.dateStamp = textBuffer.trim();
+          currentRecord.dateStamp = textBuffer.trim()
         }
         // Extract title from identification info
         else if (
@@ -137,26 +137,26 @@ function parseGetRecordsResponse(xmlText) {
           pathStr.includes('CI_Citation') &&
           pathStr.endsWith('title/CharacterString')
         ) {
-          currentRecord.title = textBuffer.trim();
+          currentRecord.title = textBuffer.trim()
         }
       }
 
       if (tagName === 'MD_Metadata' && currentRecord) {
         // Finished parsing a record
-        result.records.push(currentRecord);
-        currentRecord = null;
+        result.records.push(currentRecord)
+        currentRecord = null
       }
 
-      currentPath.pop();
-      textBuffer = '';
-    };
+      currentPath.pop()
+      textBuffer = ''
+    }
 
     parser.onend = () => {
-      resolve(result);
-    };
+      resolve(result)
+    }
 
-    parser.write(xmlText).close();
-  });
+    parser.write(xmlText).close()
+  })
 }
 
 /**
@@ -168,13 +168,13 @@ function parseGetRecordsResponse(xmlText) {
  * @param {number} options.startPosition - Starting position (1-based)
  * @returns {Promise<Object>} Result with records array and pagination info
  */
-async function fetchPage({
+async function fetchPage ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
 }) {
-  const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition });
+  const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition })
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -182,14 +182,14 @@ async function fetchPage({
       'Content-Type': 'application/xml',
     },
     body: xmlBody,
-  });
+  })
 
   if (!response.ok) {
-    throw new Error(`CSW request failed: ${response.status} ${response.statusText}`);
+    throw new Error(`CSW request failed: ${response.status} ${response.statusText}`)
   }
 
-  const xmlText = await response.text();
-  const { pagination, records } = await parseGetRecordsResponse(xmlText);
+  const xmlText = await response.text()
+  const { pagination, records } = await parseGetRecordsResponse(xmlText)
 
   return {
     records,
@@ -199,7 +199,7 @@ async function fetchPage({
       nextRecord: pagination.nextRecord,
       hasMore: pagination.hasMore,
     },
-  };
+  }
 }
 
 /**
@@ -212,47 +212,47 @@ async function fetchPage({
  * @param {Function} options.onPage - Optional callback called after each page: (pageResult, pageNumber) => void
  * @returns {Promise<Object>} Result with all records and summary
  */
-async function fetchAllRecords({
+async function fetchAllRecords ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
   onPage = null,
 }) {
-  const allRecords = [];
-  let startPosition = 1;
-  let pageNumber = 0;
-  let totalMatched = 0;
+  const allRecords = []
+  let startPosition = 1
+  let pageNumber = 0
+  let totalMatched = 0
 
   while (allRecords.length < maxTotalRecords) {
-    pageNumber++;
+    pageNumber++
 
     const pageResult = await fetchPage({
       endpoint,
       startDate,
       maxRecords: Math.min(maxRecordsPerPage, maxTotalRecords - allRecords.length),
       startPosition,
-    });
+    })
 
-    totalMatched = pageResult.pagination.totalMatched;
-    allRecords.push(...pageResult.records);
+    totalMatched = pageResult.pagination.totalMatched
+    allRecords.push(...pageResult.records)
 
     if (onPage) {
-      onPage(pageResult, pageNumber);
+      onPage(pageResult, pageNumber)
     }
 
     if (!pageResult.pagination.hasMore) {
-      break;
+      break
     }
 
-    startPosition = pageResult.pagination.nextRecord;
+    startPosition = pageResult.pagination.nextRecord
   }
 
   // Find the latest dateStamp among all records
-  let latestDateStamp = null;
+  let latestDateStamp = null
   for (const record of allRecords) {
     if (record.dateStamp && (!latestDateStamp || record.dateStamp > latestDateStamp)) {
-      latestDateStamp = record.dateStamp;
+      latestDateStamp = record.dateStamp
     }
   }
 
@@ -264,7 +264,7 @@ async function fetchAllRecords({
       pagesRequested: pageNumber,
       latestDateStamp,
     },
-  };
+  }
 }
 
 /**
@@ -273,14 +273,14 @@ async function fetchAllRecords({
  * @param {Object} options - Same as fetchAllRecords
  * @yields {Object} Page result with records and pagination info
  */
-async function* fetchRecordsGenerator({
+async function * fetchRecordsGenerator ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
 }) {
-  let startPosition = 1;
-  let fetchedCount = 0;
+  let startPosition = 1
+  let fetchedCount = 0
 
   while (fetchedCount < maxTotalRecords) {
     const pageResult = await fetchPage({
@@ -288,16 +288,16 @@ async function* fetchRecordsGenerator({
       startDate,
       maxRecords: Math.min(maxRecordsPerPage, maxTotalRecords - fetchedCount),
       startPosition,
-    });
+    })
 
-    fetchedCount += pageResult.records.length;
-    yield pageResult;
+    fetchedCount += pageResult.records.length
+    yield pageResult
 
     if (!pageResult.pagination.hasMore) {
-      break;
+      break
     }
 
-    startPosition = pageResult.pagination.nextRecord;
+    startPosition = pageResult.pagination.nextRecord
   }
 }
 
@@ -310,7 +310,7 @@ export {
   fetchPage,
   fetchAllRecords,
   fetchRecordsGenerator,
-};
+}
 
 export default {
   DEFAULT_CSW_ENDPOINT,
@@ -320,4 +320,4 @@ export default {
   fetchPage,
   fetchAllRecords,
   fetchRecordsGenerator,
-};
+}
