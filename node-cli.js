@@ -4,12 +4,12 @@
  * Node.js Entry Point (CLI)
  * 
  * Usage:
- *   node node-cli.js --startDate 2026-01-21T00:00:00Z [options]
- * 
+ *   node node-cli.js --start-date 2026-01-21T00:00:00Z [options]
+ *
  * Options:
- *   --startDate     ISO 8601 date (required)
- *   --maxRecords    Maximum records per page (default: 100)
- *   --maxTotal      Maximum total records to fetch (default: unlimited)
+ *   --start-date    ISO 8601 date (required)
+ *   --max-records   Maximum records per page (default: 100)
+ *   --max-total     Maximum total records to fetch (default: unlimited)
  *   --endpoint      CSW endpoint URL (default: GDI-DE)
  *   --output        Output format: json, summary, or ids (default: summary)
  *   --outfile       Write results to file instead of stdout
@@ -68,7 +68,7 @@ async function main() {
         records: result.records.map((r) => ({
           fileIdentifier: r.fileIdentifier,
           dateStamp: r.dateStamp,
-          // Include XML if --includeXml flag is set
+          // Include XML if --include-xml flag is set
           ...(args.includeXml ? { xml: r.xml } : {}),
         })),
       }, null, 2);
@@ -105,7 +105,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg.startsWith('--')) {
-      const key = arg.slice(2);
+      // Convert kebab-case to camelCase for internal use
+      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       // Check if next arg is a value or another flag
       if (i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
         args[key] = argv[i + 1];
@@ -123,29 +124,29 @@ function printUsage() {
 CSW Client - Fetch records from a CSW catalogue service
 
 Usage:
-  node node-cli.js --startDate <date> [options]
+  node node-cli.js --start-date <date> [options]
 
 Required:
-  --startDate     ISO 8601 date (e.g., 2026-01-21T00:00:00Z)
+  --start-date    ISO 8601 date (e.g., 2026-01-21T00:00:00Z)
 
 Options:
   --endpoint      CSW endpoint URL (default: ${DEFAULT_CSW_ENDPOINT})
-  --maxRecords    Maximum records per page (default: 100)
-  --maxTotal      Maximum total records to fetch (default: unlimited)
+  --max-records   Maximum records per page (default: 100)
+  --max-total     Maximum total records to fetch (default: unlimited)
   --output        Output format: json, summary, or ids (default: summary)
   --outfile       Write results to file instead of stdout
-  --includeXml    Include raw XML in JSON output (use with --output json)
+  --include-xml   Include raw XML in JSON output (use with --output json)
   --help          Show this help message
 
 Examples:
   # Fetch all records since a date
-  node node-cli.js --startDate 2026-01-21T00:00:00Z
+  node node-cli.js --start-date 2026-01-21T00:00:00Z
 
   # Fetch with limit and save to file
-  node node-cli.js --startDate 2026-01-21T00:00:00Z --maxTotal 500 --outfile results.json
+  node node-cli.js --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
 
   # Just get file identifiers
-  node node-cli.js --startDate 2026-01-21T00:00:00Z --output ids
+  node node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
 `);
 }
 

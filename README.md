@@ -22,16 +22,16 @@ npm install
 
 ```bash
 # Fetch all records since a date
-node node-cli.js --startDate 2026-01-21T00:00:00Z
+node node-cli.js --start-date 2026-01-21T00:00:00Z
 
 # Limit results and save to file
-node node-cli.js --startDate 2026-01-21T00:00:00Z --maxTotal 500 --outfile results.json
+node node-cli.js --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
 
 # Just get file identifiers
-node node-cli.js --startDate 2026-01-21T00:00:00Z --output ids
+node node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
 
 # Use a different endpoint
-node node-cli.js --startDate 2026-01-21T00:00:00Z --endpoint https://example.com/csw
+node node-cli.js --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
 
 ### Programmatic Usage
