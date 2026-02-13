@@ -211,21 +211,12 @@ const fetchAllRecords = async ({
     startPosition = pageResult.pagination.nextRecord
   }
 
-  // Find the latest dateStamp among all records
-  let latestDateStamp = null
-  for (const record of allRecords) {
-    if (record.dateStamp && (!latestDateStamp || record.dateStamp > latestDateStamp)) {
-      latestDateStamp = record.dateStamp
-    }
-  }
-
   return {
     records: allRecords,
     summary: {
       totalMatched,
       totalFetched: allRecords.length,
       pagesRequested: pageNumber,
-      latestDateStamp,
     },
   }
 }

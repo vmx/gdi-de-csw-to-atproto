@@ -53,7 +53,6 @@ const main = async () => {
 
   console.error('')
   console.error(`Done! Fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records.`)
-  console.error(`Latest dateStamp: ${result.summary.latestDateStamp || 'N/A'}`)
   console.error('')
 
   // Format output based on --output flag
