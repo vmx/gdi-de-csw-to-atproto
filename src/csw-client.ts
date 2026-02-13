@@ -54,29 +54,47 @@ interface AllRecordsResult {
  * Build the XML request body for CSW GetRecords
  *
  * @param options.startDate - ISO 8601 date string (e.g., '2026-01-21T00:00:00Z')
+ * @param options.endDate - Optional ISO 8601 end date (exclusive upper bound)
  * @param options.maxRecords - Maximum records per request
  * @param options.startPosition - Starting position for pagination (1-based)
  * @returns XML request body
  */
 const buildGetRecordsXml = ({
   startDate,
+  endDate,
   maxRecords,
   startPosition,
 }: {
   startDate: string
+  endDate?: string
   maxRecords: number
   startPosition: number
 }): string => {
+  const startFilter = `<ogc:PropertyIsGreaterThanOrEqualTo>
+          <ogc:PropertyName>apiso:Modified</ogc:PropertyName>
+          <ogc:Literal>${startDate}</ogc:Literal>
+        </ogc:PropertyIsGreaterThanOrEqualTo>`
+
+  let filter: string
+  if (endDate) {
+    filter = `<ogc:And>
+        ${startFilter}
+        <ogc:PropertyIsLessThan>
+          <ogc:PropertyName>apiso:Modified</ogc:PropertyName>
+          <ogc:Literal>${endDate}</ogc:Literal>
+        </ogc:PropertyIsLessThan>
+        </ogc:And>`
+  } else {
+    filter = startFilter
+  }
+
   return `<?xml version="1.0"?>
 <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" service="CSW" version="2.0.2" resultType="results" outputSchema="http://www.isotc211.org/2005/gmd" maxRecords="${maxRecords}" startPosition="${startPosition}">
   <csw:Query typeNames="csw:Record">
     <csw:ElementSetName>full</csw:ElementSetName>
     <csw:Constraint version="1.1.0">
       <ogc:Filter>
-        <ogc:PropertyIsGreaterThanOrEqualTo>
-          <ogc:PropertyName>apiso:Modified</ogc:PropertyName>
-          <ogc:Literal>${startDate}</ogc:Literal>
-        </ogc:PropertyIsGreaterThanOrEqualTo>
+        ${filter}
       </ogc:Filter>
     </csw:Constraint>
     <ogc:SortBy>
@@ -196,6 +214,7 @@ const parseGetRecordsResponse = (
  *
  * @param options.endpoint - CSW endpoint URL
  * @param options.startDate - ISO 8601 date string
+ * @param options.endDate - Optional ISO 8601 end date (exclusive upper bound)
  * @param options.maxRecords - Maximum records per request
  * @param options.startPosition - Starting position (1-based)
  * @returns Result with records array and pagination info
@@ -203,15 +222,22 @@ const parseGetRecordsResponse = (
 const fetchPage = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
+  endDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
 }: {
   endpoint?: string
   startDate: string
+  endDate?: string
   maxRecords?: number
   startPosition?: number
 }): Promise<PageResult> => {
-  const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition })
+  const xmlBody = buildGetRecordsXml({
+    startDate,
+    endDate,
+    maxRecords,
+    startPosition,
+  })
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -246,6 +272,7 @@ const fetchPage = async ({
  *
  * @param options.endpoint - CSW endpoint URL
  * @param options.startDate - ISO 8601 date string
+ * @param options.endDate - Optional ISO 8601 end date (exclusive upper bound)
  * @param options.maxRecordsPerPage - Maximum records per request
  * @param options.maxTotalRecords - Maximum total records to fetch (for safety)
  * @param options.onPage - Optional callback called after each page
@@ -254,12 +281,14 @@ const fetchPage = async ({
 const fetchAllRecords = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
+  endDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
   onPage = null,
 }: {
   endpoint?: string
   startDate: string
+  endDate?: string
   maxRecordsPerPage?: number
   maxTotalRecords?: number
   onPage?: ((pageResult: PageResult, pageNumber: number) => void) | null
@@ -275,6 +304,7 @@ const fetchAllRecords = async ({
     const pageResult = await fetchPage({
       endpoint,
       startDate,
+      endDate,
       maxRecords: Math.min(
         maxRecordsPerPage,
         maxTotalRecords - allRecords.length,

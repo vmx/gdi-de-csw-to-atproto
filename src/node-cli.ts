@@ -8,6 +8,7 @@
  *
  * Options:
  *   --start-date    ISO 8601 date (required)
+ *   --end-date      ISO 8601 end date, exclusive (optional)
  *   --max-records   Maximum records per page (default: 100)
  *   --max-total     Maximum total records to fetch (default: unlimited)
  *   --endpoint      CSW endpoint URL (default: GDI-DE)
@@ -31,11 +32,15 @@ const main = async () => {
   const options = {
     endpoint: args.endpoint || DEFAULT_CSW_ENDPOINT,
     startDate: args.startDate,
+    endDate: args.endDate,
     maxRecordsPerPage: parseInt(args.maxRecords || "100", 10),
     maxTotalRecords: args.maxTotal ? parseInt(args.maxTotal, 10) : Infinity,
   }
 
   console.error(`Fetching CSW records since ${options.startDate}...`)
+  if (options.endDate) {
+    console.error(`Until: ${options.endDate}`)
+  }
   console.error(`Endpoint: ${options.endpoint}`)
   console.error(`Max records per page: ${options.maxRecordsPerPage}`)
   if (options.maxTotalRecords !== Infinity) {
@@ -146,6 +151,7 @@ Required:
   --start-date    ISO 8601 date (e.g., 2026-01-21T00:00:00Z)
 
 Options:
+  --end-date      ISO 8601 end date, exclusive (optional)
   --endpoint      CSW endpoint URL (default: ${DEFAULT_CSW_ENDPOINT})
   --max-records   Maximum records per page (default: 100)
   --max-total     Maximum total records to fetch (default: unlimited)

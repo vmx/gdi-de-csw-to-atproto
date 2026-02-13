@@ -5,6 +5,7 @@
  *
  * Query parameters:
  *   - startDate: ISO 8601 date (required, e.g., 2026-01-21T00:00:00Z)
+ *   - endDate: ISO 8601 end date, exclusive (optional)
  *   - maxRecords: Maximum records per page (optional, default 100)
  *   - maxTotal: Maximum total records to fetch (optional, default unlimited)
  *   - endpoint: CSW endpoint URL (optional, defaults to GDI-DE)
@@ -47,6 +48,7 @@ export default {
       }
 
       const endpoint = params.get("endpoint") || DEFAULT_CSW_ENDPOINT
+      const endDate = params.get("endDate") || undefined
       const maxRecords = parseInt(params.get("maxRecords") || "100", 10)
       const maxTotal = params.get("maxTotal")
         ? parseInt(params.get("maxTotal") as string, 10)
@@ -61,6 +63,7 @@ export default {
         result = await fetchPage({
           endpoint,
           startDate,
+          endDate,
           maxRecords,
           startPosition,
         })
@@ -69,6 +72,7 @@ export default {
         result = await fetchAllRecords({
           endpoint,
           startDate,
+          endDate,
           maxRecordsPerPage: maxRecords,
           maxTotalRecords: maxTotal,
         })
