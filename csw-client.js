@@ -46,29 +46,28 @@ const buildGetRecordsXml = ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, start
  * @returns {Promise<Object>} Parsed result with pagination info and records
  */
 const parseGetRecordsResponse = (xmlText) => {
-  return new Promise((resolve, reject) => {
-    const parser = sax.parser(true, { trim: true, normalize: true })
+  const parser = sax.parser(true, { trim: true, normalize: true })
 
-    const result = {
-      pagination: {
-        numberOfRecordsMatched: 0,
-        numberOfRecordsReturned: 0,
-        nextRecord: 0,
-        hasMore: false,
-      },
-      records: [],
-    }
+  const result = {
+    pagination: {
+      numberOfRecordsMatched: 0,
+      numberOfRecordsReturned: 0,
+      nextRecord: 0,
+      hasMore: false,
+    },
+    records: [],
+  }
 
-    // State tracking
-    let currentRecord = null
-    let currentPath = []
-    let textBuffer = ''
+  // State tracking
+  let currentRecord = null
+  let currentPath = []
+  let textBuffer = ''
 
-    parser.onerror = (err) => {
-      reject(new Error(`XML parsing error: ${err.message}`))
-    }
+  parser.onerror = (err) => {
+    throw new Error(`XML parsing error: ${err.message}`)
+  }
 
-    parser.onopentag = (node) => {
+  parser.onopentag = (node) => {
       currentPath.push(node.name)
       textBuffer = ''
 
@@ -124,12 +123,8 @@ const parseGetRecordsResponse = (xmlText) => {
       textBuffer = ''
     }
 
-    parser.onend = () => {
-      resolve(result)
-    }
-
-    parser.write(xmlText).close()
-  })
+  parser.write(xmlText).close()
+  return result
 }
 
 /**
@@ -162,7 +157,7 @@ const fetchPage = async ({
   }
 
   const xmlText = await response.text()
-  const { pagination, records } = await parseGetRecordsResponse(xmlText)
+  const { pagination, records } = parseGetRecordsResponse(xmlText)
 
   return {
     records,
