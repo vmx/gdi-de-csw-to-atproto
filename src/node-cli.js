@@ -15,8 +15,8 @@
  *   --outfile       Write results to file instead of stdout
  */
 
-import { fetchAllRecords, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
-import { writeFile } from 'fs/promises'
+import { fetchAllRecords, DEFAULT_CSW_ENDPOINT } from "./csw-client.js"
+import { writeFile } from "fs/promises"
 
 const main = async () => {
   const args = parseArgs(process.argv.slice(2))
@@ -29,7 +29,7 @@ const main = async () => {
   const options = {
     endpoint: args.endpoint || DEFAULT_CSW_ENDPOINT,
     startDate: args.startDate,
-    maxRecordsPerPage: parseInt(args.maxRecords || '100', 10),
+    maxRecordsPerPage: parseInt(args.maxRecords || "100", 10),
     maxTotalRecords: args.maxTotal ? parseInt(args.maxTotal, 10) : Infinity,
   }
 
@@ -39,60 +39,70 @@ const main = async () => {
   if (options.maxTotalRecords !== Infinity) {
     console.error(`Max total records: ${options.maxTotalRecords}`)
   }
-  console.error('')
+  console.error("")
 
   const result = await fetchAllRecords({
     ...options,
     onPage: (pageResult, pageNumber) => {
       console.error(
         `Page ${pageNumber}: fetched ${pageResult.records.length} records ` +
-        `(${pageResult.pagination.totalMatched} total matched)`
+          `(${pageResult.pagination.totalMatched} total matched)`,
       )
     },
   })
 
-  console.error('')
-  console.error(`Done! Fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records.`)
-  console.error('')
+  console.error("")
+  console.error(
+    `Done! Fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records.`,
+  )
+  console.error("")
 
   // Format output based on --output flag
   let output
-  const outputFormat = args.output || 'summary'
+  const outputFormat = args.output || "summary"
 
   switch (outputFormat) {
-    case 'json':
+    case "json":
       // Full JSON output with all record details (excluding raw XML by default)
-      output = JSON.stringify({
-        summary: result.summary,
-        records: result.records.map((r) => ({
-          source: r.source,
-          dateStamp: r.dateStamp,
-          // Include XML if --include-xml flag is set
-          ...(args.includeXml ? { xml: r.xml } : {}),
-        })),
-      }, null, 2)
+      output = JSON.stringify(
+        {
+          summary: result.summary,
+          records: result.records.map((r) => ({
+            source: r.source,
+            dateStamp: r.dateStamp,
+            // Include XML if --include-xml flag is set
+            ...(args.includeXml ? { xml: r.xml } : {}),
+          })),
+        },
+        null,
+        2,
+      )
       break
 
-    case 'ids':
+    case "ids":
       // Just the file identifiers, one per line
-      output = result.records.map((r) => r.source).join('\n')
+      output = result.records.map((r) => r.source).join("\n")
       break
 
-    case 'summary':
+    case "summary":
     default:
       // Summary with list of records
-      output = JSON.stringify({
-        summary: result.summary,
-        records: result.records.map((r) => ({
-          source: r.source,
-          dateStamp: r.dateStamp,
-        })),
-      }, null, 2)
+      output = JSON.stringify(
+        {
+          summary: result.summary,
+          records: result.records.map((r) => ({
+            source: r.source,
+            dateStamp: r.dateStamp,
+          })),
+        },
+        null,
+        2,
+      )
       break
   }
 
   if (args.outfile) {
-    await writeFile(args.outfile, output, 'utf-8')
+    await writeFile(args.outfile, output, "utf-8")
     console.error(`Results written to ${args.outfile}`)
   } else {
     console.log(output)
@@ -103,11 +113,11 @@ const parseArgs = (argv) => {
   const args = {}
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
-    if (arg.startsWith('--')) {
+    if (arg.startsWith("--")) {
       // Convert kebab-case to camelCase for internal use
       const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
       // Check if next arg is a value or another flag
-      if (i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
         args[key] = argv[i + 1]
         i++
       } else {
@@ -150,6 +160,6 @@ Examples:
 }
 
 main().catch((error) => {
-  console.error('Error:', error.message)
+  console.error("Error:", error.message)
   process.exit(1)
 })

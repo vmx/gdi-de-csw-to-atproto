@@ -11,17 +11,21 @@
  *   - page: If set to "single", only fetch one page (optional)
  */
 
-import { fetchPage, fetchAllRecords, DEFAULT_CSW_ENDPOINT } from './csw-client.js'
+import {
+  fetchPage,
+  fetchAllRecords,
+  DEFAULT_CSW_ENDPOINT,
+} from "./csw-client.js"
 
 export default {
-  async fetch (request, env, ctx) {
+  async fetch(request, env, ctx) {
     // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
+    if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       })
     }
@@ -31,16 +35,21 @@ export default {
       const params = url.searchParams
 
       // Parse query parameters
-      const startDate = params.get('startDate')
+      const startDate = params.get("startDate")
       if (!startDate) {
-        return jsonResponse({ error: 'Missing required parameter: startDate' }, 400)
+        return jsonResponse(
+          { error: "Missing required parameter: startDate" },
+          400,
+        )
       }
 
-      const endpoint = params.get('endpoint') || DEFAULT_CSW_ENDPOINT
-      const maxRecords = parseInt(params.get('maxRecords') || '100', 10)
-      const maxTotal = params.get('maxTotal') ? parseInt(params.get('maxTotal'), 10) : Infinity
-      const singlePage = params.get('page') === 'single'
-      const startPosition = parseInt(params.get('startPosition') || '1', 10)
+      const endpoint = params.get("endpoint") || DEFAULT_CSW_ENDPOINT
+      const maxRecords = parseInt(params.get("maxRecords") || "100", 10)
+      const maxTotal = params.get("maxTotal")
+        ? parseInt(params.get("maxTotal"), 10)
+        : Infinity
+      const singlePage = params.get("page") === "single"
+      const startPosition = parseInt(params.get("startPosition") || "1", 10)
 
       let result
 
@@ -86,7 +95,7 @@ export default {
 
       return jsonResponse(response)
     } catch (error) {
-      console.error('CSW fetch error:', error)
+      console.error("CSW fetch error:", error)
       return jsonResponse({ error: error.message }, 500)
     }
   },
@@ -96,8 +105,8 @@ const jsonResponse = (data, status = 200) => {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
   })
 }

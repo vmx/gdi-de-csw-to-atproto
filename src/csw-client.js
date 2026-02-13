@@ -4,9 +4,9 @@
  * Uses SAX streaming parser for memory efficiency
  */
 
-import sax from 'sax'
+import sax from "sax"
 
-const DEFAULT_CSW_ENDPOINT = 'https://gdk.gdi-de.org/geonetwork/srv/eng/csw'
+const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const DEFAULT_MAX_RECORDS = 100
 
 /**
@@ -61,62 +61,79 @@ const parseGetRecordsResponse = (xmlText) => {
   // State tracking
   let currentRecord = null
   let currentPath = []
-  let textBuffer = ''
+  let textBuffer = ""
 
   parser.onerror = (err) => {
     throw new Error(`XML parsing error: ${err.message}`)
   }
 
   parser.onopentag = (node) => {
-      currentPath.push(node.name)
-      textBuffer = ''
+    currentPath.push(node.name)
+    textBuffer = ""
 
-      if (node.name === 'csw:SearchResults') {
-        const attrs = node.attributes
-        result.pagination.numberOfRecordsMatched = parseInt(attrs.numberOfRecordsMatched || '0', 10)
-        result.pagination.numberOfRecordsReturned = parseInt(attrs.numberOfRecordsReturned || '0', 10)
-        result.pagination.nextRecord = parseInt(attrs.nextRecord || '0', 10)
-        result.pagination.hasMore =
-          result.pagination.nextRecord > 0 &&
-          result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched
-      } else if (node.name === 'gmd:MD_Metadata') {
-        currentRecord = {
-          source: null,
-          dateStamp: null,
-          title: null,
-        }
+    if (node.name === "csw:SearchResults") {
+      const attrs = node.attributes
+      result.pagination.numberOfRecordsMatched = parseInt(
+        attrs.numberOfRecordsMatched || "0",
+        10,
+      )
+      result.pagination.numberOfRecordsReturned = parseInt(
+        attrs.numberOfRecordsReturned || "0",
+        10,
+      )
+      result.pagination.nextRecord = parseInt(attrs.nextRecord || "0", 10)
+      result.pagination.hasMore =
+        result.pagination.nextRecord > 0 &&
+        result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched
+    } else if (node.name === "gmd:MD_Metadata") {
+      currentRecord = {
+        source: null,
+        dateStamp: null,
+        title: null,
+      }
+    }
+  }
+
+  parser.ontext = (text) => {
+    textBuffer += text
+  }
+
+  parser.onclosetag = (name) => {
+    const pathStr = currentPath.join("/")
+
+    if (currentRecord) {
+      // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
+      if (
+        pathStr.endsWith(
+          "gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString",
+        )
+      ) {
+        currentRecord.source = textBuffer.trim()
+      }
+      // Extract dateStamp
+      else if (
+        pathStr.endsWith("gmd:dateStamp/gco:DateTime") ||
+        pathStr.endsWith("gmd:dateStamp/gco:Date")
+      ) {
+        currentRecord.dateStamp = textBuffer.trim()
+      }
+      // Extract title from identification info
+      else if (
+        pathStr.endsWith(
+          "gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString",
+        )
+      ) {
+        currentRecord.title = textBuffer.trim()
       }
     }
 
-    parser.ontext = (text) => {
-      textBuffer += text
+    if (name === "gmd:MD_Metadata" && currentRecord) {
+      result.records.push(currentRecord)
+      currentRecord = null
     }
 
-    parser.onclosetag = (name) => {
-      const pathStr = currentPath.join('/')
-
-      if (currentRecord) {
-        // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
-        if (pathStr.endsWith('gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString')) {
-          currentRecord.source = textBuffer.trim()
-        }
-        // Extract dateStamp
-        else if (pathStr.endsWith('gmd:dateStamp/gco:DateTime') || pathStr.endsWith('gmd:dateStamp/gco:Date')) {
-          currentRecord.dateStamp = textBuffer.trim()
-        }
-        // Extract title from identification info
-        else if (pathStr.endsWith('gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString')) {
-          currentRecord.title = textBuffer.trim()
-        }
-      }
-
-      if (name === 'gmd:MD_Metadata' && currentRecord) {
-        result.records.push(currentRecord)
-        currentRecord = null
-      }
-
-      currentPath.pop()
-    }
+    currentPath.pop()
+  }
 
   parser.write(xmlText).close()
   return result
@@ -140,15 +157,17 @@ const fetchPage = async ({
   const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition })
 
   const response = await fetch(endpoint, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/xml',
+      "Content-Type": "application/xml",
     },
     body: xmlBody,
   })
 
   if (!response.ok) {
-    throw new Error(`CSW request failed: ${response.status} ${response.statusText}`)
+    throw new Error(
+      `CSW request failed: ${response.status} ${response.statusText}`,
+    )
   }
 
   const xmlText = await response.text()
@@ -193,7 +212,10 @@ const fetchAllRecords = async ({
     const pageResult = await fetchPage({
       endpoint,
       startDate,
-      maxRecords: Math.min(maxRecordsPerPage, maxTotalRecords - allRecords.length),
+      maxRecords: Math.min(
+        maxRecordsPerPage,
+        maxTotalRecords - allRecords.length,
+      ),
       startPosition,
     })
 
@@ -221,8 +243,4 @@ const fetchAllRecords = async ({
   }
 }
 
-export {
-  DEFAULT_CSW_ENDPOINT,
-  fetchPage,
-  fetchAllRecords,
-}
+export { DEFAULT_CSW_ENDPOINT, fetchPage, fetchAllRecords }
