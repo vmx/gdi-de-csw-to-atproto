@@ -17,7 +17,7 @@ const DEFAULT_MAX_RECORDS = 100
  * @param {number} options.startPosition - Starting position for pagination (1-based)
  * @returns {string} XML request body
  */
-const buildGetRecordsXml = ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, startPosition = 1 }) => {
+const buildGetRecordsXml = ({ startDate, maxRecords, startPosition }) => {
   return `<?xml version="1.0"?>
 <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" service="CSW" version="2.0.2" resultType="results" outputSchema="http://www.isotc211.org/2005/gmd" maxRecords="${maxRecords}" startPosition="${startPosition}">
   <csw:Query typeNames="csw:Record">
