@@ -1,6 +1,6 @@
 # CSW Scraper
 
-A CSW (Catalogue Service for the Web) client for scraping metadata records. Works in both Node.js and Cloudflare Workers.
+A CSW (Catalogue Service for the Web) client for scraping INSPIRE metadata records. Works in both Node.js and Cloudflare Workers.
 
 ## Features
 
@@ -22,45 +22,21 @@ npm install
 
 ```bash
 # Fetch all records since a date
-node node-cli.js --start-date 2026-01-21T00:00:00Z
+node src/node-cli.js --start-date 2026-01-21T00:00:00Z
 
 # Limit results and save to file
-node node-cli.js --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
+node src/node-cli.js --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
 
-# Just get file identifiers
-node node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
+# Just get source URLs
+node src/node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
 
 # Use a different endpoint
-node node-cli.js --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
-```
-
-### Programmatic Usage
-
-```javascript
-import { fetchAllRecords, fetchPage, fetchRecordsGenerator } from './csw-client.js';
-
-// Fetch all records
-const result = await fetchAllRecords({
-  startDate: '2026-01-21T00:00:00Z',
-  maxRecordsPerPage: 100,
-  maxTotalRecords: 500,
-  onPage: (page, num) => console.log(`Page ${num}: ${page.records.length} records`),
-});
-
-console.log(result.summary);
-console.log(result.records);
-
-// Or use the generator for memory efficiency
-for await (const page of fetchRecordsGenerator({ startDate: '2026-01-21T00:00:00Z' })) {
-  for (const record of page.records) {
-    // Process each record
-  }
-}
+node src/node-cli.js --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
 
 ### Cloudflare Worker
 
-Deploy `worker.js` as your worker entry point. Query parameters:
+Deploy `src/worker.js` as your worker entry point. Query parameters:
 
 - `startDate` (required): ISO 8601 date
 - `maxRecords`: Records per page (default: 100)
@@ -76,21 +52,9 @@ https://your-worker.workers.dev/?startDate=2026-01-21T00:00:00Z&maxTotal=100
 
 ## Files
 
-- `csw-client.js` - Core library (platform-agnostic)
-- `worker.js` - Cloudflare Worker entry point
-- `node-cli.js` - Node.js CLI entry point
-- `examples.js` - Usage examples including scraping workflow
-
-## Scraping Workflow
-
-For periodic scraping (e.g., cron jobs):
-
-1. Track the `latestDateStamp` from your last successful run
-2. Query with that date as `startDate`
-3. Use `fileIdentifier` to deduplicate records with the same timestamp
-4. Update your tracked `latestDateStamp` after processing
-
-See `examples.js` for a detailed example of this pattern.
+- `src/csw-client.js` - Core library (platform-agnostic)
+- `src/worker.js` - Cloudflare Worker entry point
+- `src/node-cli.js` - Node.js CLI entry point
 
 ## License
 
