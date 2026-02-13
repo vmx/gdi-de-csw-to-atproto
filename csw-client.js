@@ -116,7 +116,6 @@ const parseGetRecordsResponse = (xmlText) => {
       }
 
       currentPath.pop()
-      textBuffer = ''
     }
 
   parser.write(xmlText).close()
