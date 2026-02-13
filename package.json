@@ -6,6 +6,7 @@
   "main": "src/csw-client.ts",
   "scripts": {
     "cli": "node src/node-cli.ts",
+    "check": "tsc --noEmit",
     "fmt": "biome format --write"
   },
   "dependencies": {
