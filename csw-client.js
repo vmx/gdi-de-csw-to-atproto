@@ -92,10 +92,6 @@ const parseGetRecordsResponse = (xmlText) => {
       textBuffer += text
     }
 
-    parser.oncdata = (cdata) => {
-      textBuffer += cdata
-    }
-
     parser.onclosetag = (name) => {
       const pathStr = currentPath.join('/')
 
