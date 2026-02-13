@@ -2,6 +2,8 @@
  * CSW (Catalogue Service for the Web) Client
  * Works in both Cloudflare Workers and Node.js environments
  * Uses SAX streaming parser for memory efficiency
+ *
+ * @module
  */
 
 import sax from "sax"
@@ -9,15 +11,62 @@ import sax from "sax"
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const DEFAULT_MAX_RECORDS = 100
 
+/** A single metadata record from a CSW response */
+interface CswRecord {
+  /** Source URL extracted from the INSPIRE citation identifier */
+  source: string | null
+  /** Date the record was last modified */
+  dateStamp: string | null
+  /** Title from the citation */
+  title: string | null
+}
+
+/** Pagination info from the CSW SearchResults element */
+interface Pagination {
+  numberOfRecordsMatched: number
+  numberOfRecordsReturned: number
+  nextRecord: number
+  hasMore: boolean
+}
+
+/** Result from fetching a single page of CSW records */
+interface PageResult {
+  records: CswRecord[]
+  pagination: {
+    totalMatched: number
+    returned: number
+    nextRecord: number
+    hasMore: boolean
+  }
+}
+
+/** Result from fetching all records with pagination */
+interface AllRecordsResult {
+  records: CswRecord[]
+  summary: {
+    totalMatched: number
+    totalFetched: number
+    pagesRequested: number
+  }
+}
+
 /**
  * Build the XML request body for CSW GetRecords
- * @param {Object} options
- * @param {string} options.startDate - ISO 8601 date string (e.g., '2026-01-21T00:00:00Z')
- * @param {number} options.maxRecords - Maximum records per request
- * @param {number} options.startPosition - Starting position for pagination (1-based)
- * @returns {string} XML request body
+ *
+ * @param options.startDate - ISO 8601 date string (e.g., '2026-01-21T00:00:00Z')
+ * @param options.maxRecords - Maximum records per request
+ * @param options.startPosition - Starting position for pagination (1-based)
+ * @returns XML request body
  */
-const buildGetRecordsXml = ({ startDate, maxRecords, startPosition }) => {
+const buildGetRecordsXml = ({
+  startDate,
+  maxRecords,
+  startPosition,
+}: {
+  startDate: string
+  maxRecords: number
+  startPosition: number
+}): string => {
   return `<?xml version="1.0"?>
 <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" service="CSW" version="2.0.2" resultType="results" outputSchema="http://www.isotc211.org/2005/gmd" maxRecords="${maxRecords}" startPosition="${startPosition}">
   <csw:Query typeNames="csw:Record">
@@ -42,13 +91,16 @@ const buildGetRecordsXml = ({ startDate, maxRecords, startPosition }) => {
 
 /**
  * Parse CSW GetRecords response using streaming SAX parser
- * @param {string} xmlText - Raw XML response
- * @returns {Promise<Object>} Parsed result with pagination info and records
+ *
+ * @param xmlText - Raw XML response
+ * @returns Parsed result with pagination info and records
  */
-const parseGetRecordsResponse = (xmlText) => {
+const parseGetRecordsResponse = (
+  xmlText: string,
+): { pagination: Pagination; records: CswRecord[] } => {
   const parser = sax.parser(true, { trim: true, normalize: true })
 
-  const result = {
+  const result: { pagination: Pagination; records: CswRecord[] } = {
     pagination: {
       numberOfRecordsMatched: 0,
       numberOfRecordsReturned: 0,
@@ -59,8 +111,8 @@ const parseGetRecordsResponse = (xmlText) => {
   }
 
   // State tracking
-  let currentRecord = null
-  let currentPath = []
+  let currentRecord: CswRecord | null = null
+  let currentPath: string[] = []
   let textBuffer = ""
 
   parser.onerror = (err) => {
@@ -72,7 +124,7 @@ const parseGetRecordsResponse = (xmlText) => {
     textBuffer = ""
 
     if (node.name === "csw:SearchResults") {
-      const attrs = node.attributes
+      const attrs = node.attributes as Record<string, string>
       result.pagination.numberOfRecordsMatched = parseInt(
         attrs.numberOfRecordsMatched || "0",
         10,
@@ -141,19 +193,24 @@ const parseGetRecordsResponse = (xmlText) => {
 
 /**
  * Fetch a single page of CSW records
- * @param {Object} options
- * @param {string} options.endpoint - CSW endpoint URL
- * @param {string} options.startDate - ISO 8601 date string
- * @param {number} options.maxRecords - Maximum records per request
- * @param {number} options.startPosition - Starting position (1-based)
- * @returns {Promise<Object>} Result with records array and pagination info
+ *
+ * @param options.endpoint - CSW endpoint URL
+ * @param options.startDate - ISO 8601 date string
+ * @param options.maxRecords - Maximum records per request
+ * @param options.startPosition - Starting position (1-based)
+ * @returns Result with records array and pagination info
  */
 const fetchPage = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
   startDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
-}) => {
+}: {
+  endpoint?: string
+  startDate: string
+  maxRecords?: number
+  startPosition?: number
+}): Promise<PageResult> => {
   const xmlBody = buildGetRecordsXml({ startDate, maxRecords, startPosition })
 
   const response = await fetch(endpoint, {
@@ -186,13 +243,13 @@ const fetchPage = async ({
 
 /**
  * Fetch all records since a given date, handling pagination automatically
- * @param {Object} options
- * @param {string} options.endpoint - CSW endpoint URL
- * @param {string} options.startDate - ISO 8601 date string
- * @param {number} options.maxRecordsPerPage - Maximum records per request
- * @param {number} options.maxTotalRecords - Maximum total records to fetch (optional, for safety)
- * @param {Function} options.onPage - Optional callback called after each page: (pageResult, pageNumber) => void
- * @returns {Promise<Object>} Result with all records and summary
+ *
+ * @param options.endpoint - CSW endpoint URL
+ * @param options.startDate - ISO 8601 date string
+ * @param options.maxRecordsPerPage - Maximum records per request
+ * @param options.maxTotalRecords - Maximum total records to fetch (for safety)
+ * @param options.onPage - Optional callback called after each page
+ * @returns Result with all records and summary
  */
 const fetchAllRecords = async ({
   endpoint = DEFAULT_CSW_ENDPOINT,
@@ -200,8 +257,14 @@ const fetchAllRecords = async ({
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
   onPage = null,
-}) => {
-  const allRecords = []
+}: {
+  endpoint?: string
+  startDate: string
+  maxRecordsPerPage?: number
+  maxTotalRecords?: number
+  onPage?: ((pageResult: PageResult, pageNumber: number) => void) | null
+}): Promise<AllRecordsResult> => {
+  const allRecords: CswRecord[] = []
   let startPosition = 1
   let pageNumber = 0
   let totalMatched = 0
@@ -243,4 +306,5 @@ const fetchAllRecords = async ({
   }
 }
 
+export type { CswRecord, PageResult, AllRecordsResult }
 export { DEFAULT_CSW_ENDPOINT, fetchPage, fetchAllRecords }

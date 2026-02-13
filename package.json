@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "description": "CSW catalogue scraper - works in Node.js and Cloudflare Workers",
   "type": "module",
-  "main": "csw-client.js",
+  "main": "src/csw-client.ts",
   "scripts": {
-    "cli": "node node-cli.js",
-    "examples": "node examples.js",
+    "cli": "node src/node-cli.ts",
     "fmt": "biome format --write"
   },
   "dependencies": {
     "sax": "^1.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.15"
+    "@biomejs/biome": "^2.3.15",
+    "@types/sax": "^1.2.7"
   },
   "engines": {
     "node": ">=18.0.0"

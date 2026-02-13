@@ -1,7 +1,7 @@
 /**
  * Cloudflare Worker Entry Point
  *
- * Deploy this as your Cloudflare Worker, ensuring csw-client.js is bundled with it.
+ * Deploy this as your Cloudflare Worker, ensuring csw-client.ts is bundled with it.
  *
  * Query parameters:
  *   - startDate: ISO 8601 date (required, e.g., 2026-01-21T00:00:00Z)
@@ -9,16 +9,19 @@
  *   - maxTotal: Maximum total records to fetch (optional, default unlimited)
  *   - endpoint: CSW endpoint URL (optional, defaults to GDI-DE)
  *   - page: If set to "single", only fetch one page (optional)
+ *
+ * @module
  */
 
 import {
   fetchPage,
   fetchAllRecords,
   DEFAULT_CSW_ENDPOINT,
-} from "./csw-client.js"
+} from "./csw-client.ts"
+import type { PageResult, AllRecordsResult } from "./csw-client.ts"
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request: Request): Promise<Response> {
     // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -46,12 +49,12 @@ export default {
       const endpoint = params.get("endpoint") || DEFAULT_CSW_ENDPOINT
       const maxRecords = parseInt(params.get("maxRecords") || "100", 10)
       const maxTotal = params.get("maxTotal")
-        ? parseInt(params.get("maxTotal"), 10)
+        ? parseInt(params.get("maxTotal") as string, 10)
         : Infinity
       const singlePage = params.get("page") === "single"
       const startPosition = parseInt(params.get("startPosition") || "1", 10)
 
-      let result
+      let result: PageResult | AllRecordsResult
 
       if (singlePage) {
         // Fetch only a single page
@@ -72,36 +75,41 @@ export default {
       }
 
       // Return a summary without the full XML to keep response size manageable
-      // You can modify this to return full XML if needed
       const response = singlePage
         ? {
             records: result.records.map((r) => ({
               source: r.source,
               dateStamp: r.dateStamp,
-              // Uncomment the next line to include full XML:
-              // xml: r.xml,
             })),
-            pagination: result.pagination,
+            pagination: (result as PageResult).pagination,
           }
         : {
             records: result.records.map((r) => ({
               source: r.source,
               dateStamp: r.dateStamp,
-              // Uncomment the next line to include full XML:
-              // xml: r.xml,
             })),
-            summary: result.summary,
+            summary: (result as AllRecordsResult).summary,
           }
 
       return jsonResponse(response)
     } catch (error) {
       console.error("CSW fetch error:", error)
-      return jsonResponse({ error: error.message }, 500)
+      return jsonResponse(
+        { error: error instanceof Error ? error.message : String(error) },
+        500,
+      )
     }
   },
 }
 
-const jsonResponse = (data, status = 200) => {
+/**
+ * Create a JSON response with CORS headers
+ *
+ * @param data - Response body to serialize
+ * @param status - HTTP status code
+ * @returns Response with JSON content type and CORS headers
+ */
+const jsonResponse = (data: unknown, status = 200): Response => {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {

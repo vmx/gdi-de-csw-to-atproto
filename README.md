@@ -22,21 +22,21 @@ npm install
 
 ```bash
 # Fetch all records since a date
-node src/node-cli.js --start-date 2026-01-21T00:00:00Z
+node src/node-cli.ts --start-date 2026-01-21T00:00:00Z
 
 # Limit results and save to file
-node src/node-cli.js --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
+node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
 
 # Just get source URLs
-node src/node-cli.js --start-date 2026-01-21T00:00:00Z --output ids
+node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --output ids
 
 # Use a different endpoint
-node src/node-cli.js --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
+node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
 
 ### Cloudflare Worker
 
-Deploy `src/worker.js` as your worker entry point. Query parameters:
+Deploy `src/worker.ts` as your worker entry point. Query parameters:
 
 - `startDate` (required): ISO 8601 date
 - `maxRecords`: Records per page (default: 100)
@@ -52,9 +52,9 @@ https://your-worker.workers.dev/?startDate=2026-01-21T00:00:00Z&maxTotal=100
 
 ## Files
 
-- `src/csw-client.js` - Core library (platform-agnostic)
-- `src/worker.js` - Cloudflare Worker entry point
-- `src/node-cli.js` - Node.js CLI entry point
+- `src/csw-client.ts` - Core library (platform-agnostic)
+- `src/worker.ts` - Cloudflare Worker entry point
+- `src/node-cli.ts` - Node.js CLI entry point
 
 ## License
 
