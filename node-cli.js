@@ -66,7 +66,7 @@ const main = async () => {
       output = JSON.stringify({
         summary: result.summary,
         records: result.records.map((r) => ({
-          fileIdentifier: r.fileIdentifier,
+          source: r.source,
           dateStamp: r.dateStamp,
           // Include XML if --include-xml flag is set
           ...(args.includeXml ? { xml: r.xml } : {}),
@@ -76,7 +76,7 @@ const main = async () => {
 
     case 'ids':
       // Just the file identifiers, one per line
-      output = result.records.map((r) => r.fileIdentifier).join('\n')
+      output = result.records.map((r) => r.source).join('\n')
       break
 
     case 'summary':
@@ -85,7 +85,7 @@ const main = async () => {
       output = JSON.stringify({
         summary: result.summary,
         records: result.records.map((r) => ({
-          fileIdentifier: r.fileIdentifier,
+          source: r.source,
           dateStamp: r.dateStamp,
         })),
       }, null, 2)

@@ -67,7 +67,7 @@ export default {
       const response = singlePage
         ? {
             records: result.records.map((r) => ({
-              fileIdentifier: r.fileIdentifier,
+              source: r.source,
               dateStamp: r.dateStamp,
               // Uncomment the next line to include full XML:
               // xml: r.xml,
@@ -76,7 +76,7 @@ export default {
           }
         : {
             records: result.records.map((r) => ({
-              fileIdentifier: r.fileIdentifier,
+              source: r.source,
               dateStamp: r.dateStamp,
               // Uncomment the next line to include full XML:
               // xml: r.xml,

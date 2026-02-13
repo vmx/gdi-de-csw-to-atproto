@@ -41,16 +41,6 @@ const buildGetRecordsXml = ({ startDate, maxRecords = DEFAULT_MAX_RECORDS, start
 }
 
 /**
- * Strip namespace prefix from tag name
- * @param {string} name - Tag name potentially with namespace
- * @returns {string} Tag name without namespace prefix
- */
-const stripNs = (name) => {
-  const colonIndex = name.indexOf(':')
-  return colonIndex >= 0 ? name.slice(colonIndex + 1) : name
-}
-
-/**
  * Parse CSW GetRecords response using streaming SAX parser
  * @param {string} xmlText - Raw XML response
  * @returns {Promise<Object>} Parsed result with pagination info and records
@@ -79,30 +69,20 @@ const parseGetRecordsResponse = (xmlText) => {
     }
 
     parser.onopentag = (node) => {
-      const tagName = stripNs(node.name)
-      currentPath.push(tagName)
+      currentPath.push(node.name)
       textBuffer = ''
 
-      if (tagName === 'SearchResults') {
-        // Extract pagination from attributes
+      if (node.name === 'csw:SearchResults') {
         const attrs = node.attributes
-        for (const [key, value] of Object.entries(attrs)) {
-          const attrName = stripNs(key)
-          if (attrName === 'numberOfRecordsMatched') {
-            result.pagination.numberOfRecordsMatched = parseInt(value, 10)
-          } else if (attrName === 'numberOfRecordsReturned') {
-            result.pagination.numberOfRecordsReturned = parseInt(value, 10)
-          } else if (attrName === 'nextRecord') {
-            result.pagination.nextRecord = parseInt(value, 10)
-          }
-        }
+        result.pagination.numberOfRecordsMatched = parseInt(attrs.numberOfRecordsMatched || '0', 10)
+        result.pagination.numberOfRecordsReturned = parseInt(attrs.numberOfRecordsReturned || '0', 10)
+        result.pagination.nextRecord = parseInt(attrs.nextRecord || '0', 10)
         result.pagination.hasMore =
           result.pagination.nextRecord > 0 &&
           result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched
-      } else if (tagName === 'MD_Metadata') {
-        // Start a new record
+      } else if (node.name === 'gmd:MD_Metadata') {
         currentRecord = {
-          fileIdentifier: null,
+          source: null,
           dateStamp: null,
           title: null,
         }
@@ -118,31 +98,24 @@ const parseGetRecordsResponse = (xmlText) => {
     }
 
     parser.onclosetag = (name) => {
-      const tagName = stripNs(name)
       const pathStr = currentPath.join('/')
 
       if (currentRecord) {
-        // Extract fileIdentifier
-        if (pathStr.endsWith('fileIdentifier/CharacterString')) {
-          currentRecord.fileIdentifier = textBuffer.trim()
+        // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
+        if (pathStr.endsWith('gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString')) {
+          currentRecord.source = textBuffer.trim()
         }
-        // Extract dateStamp (can be Date or DateTime)
-        else if (pathStr.endsWith('dateStamp/DateTime') || pathStr.endsWith('dateStamp/Date')) {
+        // Extract dateStamp
+        else if (pathStr.endsWith('gmd:dateStamp/gco:DateTime') || pathStr.endsWith('gmd:dateStamp/gco:Date')) {
           currentRecord.dateStamp = textBuffer.trim()
         }
         // Extract title from identification info
-        else if (
-          pathStr.includes('identificationInfo') &&
-          pathStr.includes('citation') &&
-          pathStr.includes('CI_Citation') &&
-          pathStr.endsWith('title/CharacterString')
-        ) {
+        else if (pathStr.endsWith('gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString')) {
           currentRecord.title = textBuffer.trim()
         }
       }
 
-      if (tagName === 'MD_Metadata' && currentRecord) {
-        // Finished parsing a record
+      if (name === 'gmd:MD_Metadata' && currentRecord) {
         result.records.push(currentRecord)
         currentRecord = null
       }
