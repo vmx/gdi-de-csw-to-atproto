@@ -15,8 +15,5 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.15",
     "@types/sax": "^1.2.7"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
