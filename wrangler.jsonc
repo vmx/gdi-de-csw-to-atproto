@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "csw-scraper",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-04-01",
+  "kv_namespaces": [
+    {
+      "binding": "CSW_KV",
+      "id": "PLACEHOLDER"
+    }
+  ]
+}

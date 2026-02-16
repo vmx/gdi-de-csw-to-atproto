@@ -1,9 +1,16 @@
 /**
  * Cloudflare Worker Entry Point
  *
- * Deploy this as your Cloudflare Worker, ensuring csw-client.ts is bundled with it.
+ * Supports both scheduled execution (via Cron Triggers) and HTTP requests
+ * (for debugging). Uses KV to persist the last run timestamp.
  *
- * Query parameters:
+ * KV binding: CSW_KV
+ *
+ * HTTP routes:
+ *   - GET / — alive check
+ *   - GET /query?startDate=...&endDate=...&maxRecords=...&maxTotal=...&endpoint=... — debug query
+ *
+ * Query parameters (for /query):
  *   - startDate: ISO 8601 date (required, e.g., 2026-01-21T00:00:00Z)
  *   - endDate: ISO 8601 end date, exclusive (optional)
  *   - maxRecords: Maximum records per page (optional, default 100)
@@ -13,54 +20,107 @@
  * @module
  */
 
-import { fetchAllRecords } from "./csw-client.ts"
+import { type AllRecordsResult, fetchAllRecords } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 
-export default {
-  async fetch(request: Request): Promise<Response> {
-    try {
-      const url = new URL(request.url)
-      const params = url.searchParams
+const queryCsw = async ({
+  startDate,
+  endDate,
+  endpoint = DEFAULT_CSW_ENDPOINT,
+  maxRecordsPerPage = 100,
+  maxTotalRecords = Infinity,
+}: {
+  startDate: string
+  endDate?: string
+  endpoint?: string
+  maxRecordsPerPage?: number
+  maxTotalRecords?: number
+}): Promise<AllRecordsResult> => {
+  return fetchAllRecords({
+    endpoint,
+    startDate,
+    endDate,
+    maxRecordsPerPage,
+    maxTotalRecords,
+  })
+}
 
-      // Parse query parameters
-      const startDate = params.get("startDate")
-      if (!startDate) {
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url)
+
+    if (url.pathname === "/") {
+      return new Response("csw-scraper is running. Use /query to query CSW.")
+    }
+
+    if (url.pathname === "/query") {
+      try {
+        const params = url.searchParams
+        const startDate = params.get("startDate")
+        if (!startDate) {
+          return Response.json(
+            { error: "Missing required parameter: startDate" },
+            { status: 400 },
+          )
+        }
+
+        const endpoint = params.get("endpoint") || undefined
+        const endDate = params.get("endDate") || undefined
+        const maxRecordsPerPage = params.has("maxRecords")
+          ? parseInt(params.get("maxRecords") as string, 10)
+          : undefined
+        const maxTotalRecords = params.has("maxTotal")
+          ? parseInt(params.get("maxTotal") as string, 10)
+          : undefined
+
+        const result = await queryCsw({
+          startDate,
+          endDate,
+          endpoint,
+          maxRecordsPerPage,
+          maxTotalRecords,
+        })
+
+        return Response.json({
+          records: result.records.map((r) => ({
+            identifier: r.identifier,
+            source: r.source,
+            dateStamp: r.dateStamp,
+          })),
+          summary: result.summary,
+        })
+      } catch (error) {
+        console.error("CSW fetch error:", error)
         return Response.json(
-          { error: "Missing required parameter: startDate" },
-          { status: 400 },
+          { error: error instanceof Error ? error.message : String(error) },
+          { status: 500 },
         )
       }
-
-      const endpoint = params.get("endpoint") || DEFAULT_CSW_ENDPOINT
-      const endDate = params.get("endDate") || undefined
-      const maxRecords = parseInt(params.get("maxRecords") || "100", 10)
-      const maxTotal = params.get("maxTotal")
-        ? parseInt(params.get("maxTotal") as string, 10)
-        : Infinity
-
-      const result = await fetchAllRecords({
-        endpoint,
-        startDate,
-        endDate,
-        maxRecordsPerPage: maxRecords,
-        maxTotalRecords: maxTotal,
-      })
-
-      return Response.json({
-        records: result.records.map((r) => ({
-          identifier: r.identifier,
-          source: r.source,
-          dateStamp: r.dateStamp,
-        })),
-        summary: result.summary,
-      })
-    } catch (error) {
-      console.error("CSW fetch error:", error)
-      return Response.json(
-        { error: error instanceof Error ? error.message : String(error) },
-        { status: 500 },
-      )
     }
+
+    return Response.json({ error: "Not found" }, { status: 404 })
+  },
+
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
+    const endDate = new Date().toISOString()
+
+    let startDate = await env.CSW_KV.get("lastRun")
+    if (!startDate) {
+      // First run ever: look back 24 hours
+      startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    }
+
+    await env.CSW_KV.put("lastRun", endDate)
+
+    const result = await queryCsw({ startDate, endDate })
+
+    console.log(
+      `Scheduled run: fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records (${result.summary.pagesRequested} pages) from ${startDate} to ${endDate}\n${JSON.stringify(result)}`,
+    )
   },
 }
