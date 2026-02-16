@@ -75,6 +75,7 @@ const main = async () => {
         {
           summary: result.summary,
           records: result.records.map((r) => ({
+            identifier: r.identifier,
             source: r.source,
             dateStamp: r.dateStamp,
           })),
@@ -96,6 +97,7 @@ const main = async () => {
         {
           summary: result.summary,
           records: result.records.map((r) => ({
+            identifier: r.identifier,
             source: r.source,
             dateStamp: r.dateStamp,
           })),

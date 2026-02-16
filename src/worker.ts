@@ -82,6 +82,7 @@ export default {
       const response = singlePage
         ? {
             records: result.records.map((r) => ({
+              identifier: r.identifier,
               source: r.source,
               dateStamp: r.dateStamp,
             })),
@@ -89,6 +90,7 @@ export default {
           }
         : {
             records: result.records.map((r) => ({
+              identifier: r.identifier,
               source: r.source,
               dateStamp: r.dateStamp,
             })),

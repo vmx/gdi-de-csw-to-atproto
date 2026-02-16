@@ -13,6 +13,8 @@ const DEFAULT_MAX_RECORDS = 100
 
 /** A single metadata record from a CSW response */
 interface CswRecord {
+  /** File identifier from gmd:fileIdentifier */
+  identifier: string | null
   /** Source URL extracted from the INSPIRE citation identifier */
   source: string | null
   /** Date the record was last modified */
@@ -157,6 +159,7 @@ const parseGetRecordsResponse = (
         result.pagination.nextRecord <= result.pagination.numberOfRecordsMatched
     } else if (node.name === "gmd:MD_Metadata") {
       currentRecord = {
+        identifier: null,
         source: null,
         dateStamp: null,
         title: null,
@@ -172,8 +175,16 @@ const parseGetRecordsResponse = (
     const pathStr = currentPath.join("/")
 
     if (currentRecord) {
-      // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
+      // Extract fileIdentifier
       if (
+        pathStr.endsWith(
+          "gmd:MD_Metadata/gmd:fileIdentifier/gco:CharacterString",
+        )
+      ) {
+        currentRecord.identifier = textBuffer.trim()
+      }
+      // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
+      else if (
         pathStr.endsWith(
           "gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString",
         )
