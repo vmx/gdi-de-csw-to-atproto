@@ -8,7 +8,6 @@
 
 import sax from "sax"
 
-const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const DEFAULT_MAX_RECORDS = 100
 
 /** A single metadata record from a CSW response */
@@ -232,14 +231,14 @@ const parseGetRecordsResponse = (
  * @returns Result with records array and pagination info
  */
 const fetchPage = async ({
-  endpoint = DEFAULT_CSW_ENDPOINT,
+  endpoint,
   startDate,
   endDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
   onResponse = null,
 }: {
-  endpoint?: string
+  endpoint: string
   startDate: string
   endDate?: string
   maxRecords?: number
@@ -297,7 +296,7 @@ const fetchPage = async ({
  * @returns Result with all records and summary
  */
 const fetchAllRecords = async ({
-  endpoint = DEFAULT_CSW_ENDPOINT,
+  endpoint,
   startDate,
   endDate,
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
@@ -305,7 +304,7 @@ const fetchAllRecords = async ({
   onPage = null,
   onResponse = null,
 }: {
-  endpoint?: string
+  endpoint: string
   startDate: string
   endDate?: string
   maxRecordsPerPage?: number
@@ -358,4 +357,4 @@ const fetchAllRecords = async ({
 }
 
 export type { CswRecord, PageResult, AllRecordsResult }
-export { DEFAULT_CSW_ENDPOINT, fetchPage, fetchAllRecords }
+export { fetchPage, fetchAllRecords }

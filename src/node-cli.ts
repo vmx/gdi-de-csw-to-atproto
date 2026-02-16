@@ -19,7 +19,9 @@
  * @module
  */
 
-import { fetchAllRecords, DEFAULT_CSW_ENDPOINT } from "./csw-client.ts"
+import { fetchAllRecords } from "./csw-client.ts"
+
+const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 import { writeFile } from "fs/promises"
 
 const main = async () => {

@@ -14,12 +14,10 @@
  * @module
  */
 
-import {
-  fetchPage,
-  fetchAllRecords,
-  DEFAULT_CSW_ENDPOINT,
-} from "./csw-client.ts"
+import { fetchPage, fetchAllRecords } from "./csw-client.ts"
 import type { PageResult, AllRecordsResult } from "./csw-client.ts"
+
+const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 
 export default {
   async fetch(request: Request): Promise<Response> {
