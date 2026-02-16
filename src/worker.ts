@@ -21,17 +21,6 @@ const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 
 export default {
   async fetch(request: Request): Promise<Response> {
-    // Handle CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      })
-    }
-
     try {
       const url = new URL(request.url)
       const params = url.searchParams
@@ -39,9 +28,9 @@ export default {
       // Parse query parameters
       const startDate = params.get("startDate")
       if (!startDate) {
-        return jsonResponse(
+        return Response.json(
           { error: "Missing required parameter: startDate" },
-          400,
+          { status: 400 },
         )
       }
 
@@ -95,30 +84,13 @@ export default {
             summary: (result as AllRecordsResult).summary,
           }
 
-      return jsonResponse(response)
+      return Response.json(response)
     } catch (error) {
       console.error("CSW fetch error:", error)
-      return jsonResponse(
+      return Response.json(
         { error: error instanceof Error ? error.message : String(error) },
-        500,
+        { status: 500 },
       )
     }
   },
-}
-
-/**
- * Create a JSON response with CORS headers
- *
- * @param data - Response body to serialize
- * @param status - HTTP status code
- * @returns Response with JSON content type and CORS headers
- */
-const jsonResponse = (data: unknown, status = 200): Response => {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  })
 }
