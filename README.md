@@ -1,8 +1,10 @@
-# CSW Scraper
+CSW Scraper
+===========
 
 A CSW (Catalogue Service for the Web) client for scraping INSPIRE metadata records. Works in both Node.js and Cloudflare Workers.
 
-## Features
+Features
+--------
 
 - Fetch metadata records from CSW endpoints (OGC CSW 2.0.2)
 - Filter by modification date
@@ -10,15 +12,15 @@ A CSW (Catalogue Service for the Web) client for scraping INSPIRE metadata recor
 - Streaming XML parsing (memory efficient)
 - Configurable for both Node.js CLI and Cloudflare Workers
 
-## Installation
+Installation
+------------
 
 ```bash
 npm install
 ```
 
-## Usage
-
-### Node.js CLI
+Node.js CLI
+-----------
 
 ```bash
 # Fetch all records since a date
@@ -34,9 +36,10 @@ node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --output ids
 node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
 
-### Cloudflare Worker
+Cloudflare Worker
+-----------------
 
-#### Initial setup
+### Initial setup
 
 1. Create a `.env` file with your Cloudflare credentials:
    ```
@@ -58,7 +61,11 @@ node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://exampl
 
 The worker runs on a schedule (configured via Cron Triggers in `wrangler.jsonc`) and stores its last run timestamp in KV. On each run it fetches all records modified since the last run.
 
-#### Debug endpoint
+### Development
+
+To run the worker locally:
+
+    npm run dev
 
 `GET /query` serves as a debug interface. Query parameters:
 
@@ -73,12 +80,26 @@ Example:
 https://your-worker.workers.dev/query?startDate=2026-01-21T00:00:00Z&maxTotal=100
 ```
 
-## Files
+When changing the `wrangler.jsonc` configuration, re-run the types generator:
+
+    npm run cf-typegen
+
+
+### Deployment
+
+Deploy it to Cloudflare:
+
+     npm run deploy
+
+
+Files
+-----
 
 - `src/csw-client.ts` - Core library (platform-agnostic)
 - `src/worker.ts` - Cloudflare Worker entry point
 - `src/node-cli.ts` - Node.js CLI entry point
 
-## License
+License
+-------
 
 MIT
