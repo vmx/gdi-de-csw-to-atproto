@@ -6,7 +6,15 @@
   "kv_namespaces": [
     {
       "binding": "CSW_KV",
-      "id": "PLACEHOLDER"
+      "id": "f48184c0efdd40938f2125a60da80fc1"
     }
-  ]
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+  }
 }
