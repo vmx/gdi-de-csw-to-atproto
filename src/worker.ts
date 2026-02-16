@@ -9,13 +9,11 @@
  *   - maxRecords: Maximum records per page (optional, default 100)
  *   - maxTotal: Maximum total records to fetch (optional, default unlimited)
  *   - endpoint: CSW endpoint URL (optional, defaults to GDI-DE)
- *   - page: If set to "single", only fetch one page (optional)
  *
  * @module
  */
 
-import { fetchPage, fetchAllRecords } from "./csw-client.ts"
-import type { PageResult, AllRecordsResult } from "./csw-client.ts"
+import { fetchAllRecords } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 
@@ -40,51 +38,23 @@ export default {
       const maxTotal = params.get("maxTotal")
         ? parseInt(params.get("maxTotal") as string, 10)
         : Infinity
-      const singlePage = params.get("page") === "single"
-      const startPosition = parseInt(params.get("startPosition") || "1", 10)
 
-      let result: PageResult | AllRecordsResult
+      const result = await fetchAllRecords({
+        endpoint,
+        startDate,
+        endDate,
+        maxRecordsPerPage: maxRecords,
+        maxTotalRecords: maxTotal,
+      })
 
-      if (singlePage) {
-        // Fetch only a single page
-        result = await fetchPage({
-          endpoint,
-          startDate,
-          endDate,
-          maxRecords,
-          startPosition,
-        })
-      } else {
-        // Fetch all pages
-        result = await fetchAllRecords({
-          endpoint,
-          startDate,
-          endDate,
-          maxRecordsPerPage: maxRecords,
-          maxTotalRecords: maxTotal,
-        })
-      }
-
-      // Return a summary without the full XML to keep response size manageable
-      const response = singlePage
-        ? {
-            records: result.records.map((r) => ({
-              identifier: r.identifier,
-              source: r.source,
-              dateStamp: r.dateStamp,
-            })),
-            pagination: (result as PageResult).pagination,
-          }
-        : {
-            records: result.records.map((r) => ({
-              identifier: r.identifier,
-              source: r.source,
-              dateStamp: r.dateStamp,
-            })),
-            summary: (result as AllRecordsResult).summary,
-          }
-
-      return Response.json(response)
+      return Response.json({
+        records: result.records.map((r) => ({
+          identifier: r.identifier,
+          source: r.source,
+          dateStamp: r.dateStamp,
+        })),
+        summary: result.summary,
+      })
     } catch (error) {
       console.error("CSW fetch error:", error)
       return Response.json(
