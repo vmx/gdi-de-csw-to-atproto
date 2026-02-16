@@ -82,14 +82,7 @@ export default {
           maxTotalRecords,
         })
 
-        return Response.json({
-          records: result.records.map((r) => ({
-            identifier: r.identifier,
-            source: r.source,
-            dateStamp: r.dateStamp,
-          })),
-          summary: result.summary,
-        })
+        return Response.json(result)
       } catch (error) {
         console.error("CSW fetch error:", error)
         return Response.json(
