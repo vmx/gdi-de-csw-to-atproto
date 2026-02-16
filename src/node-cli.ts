@@ -14,6 +14,7 @@
  *   --endpoint      CSW endpoint URL (default: GDI-DE)
  *   --output        Output format: json, summary, or ids (default: summary)
  *   --outfile       Write results to file instead of stdout
+ *   --verbose       Log raw CSW XML responses to stderr
  *
  * @module
  */
@@ -56,6 +57,7 @@ const main = async () => {
           `(${pageResult.pagination.totalMatched} total matched)`,
       )
     },
+    onResponse: args.verbose ? (xml) => console.error(xml) : null,
   })
 
   console.error("")
@@ -159,6 +161,7 @@ Options:
   --max-total     Maximum total records to fetch (default: unlimited)
   --output        Output format: json, summary, or ids (default: summary)
   --outfile       Write results to file instead of stdout
+  --verbose       Log raw CSW XML responses to stderr
   --help          Show this help message
 
 Examples:
