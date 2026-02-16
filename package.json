@@ -5,10 +5,13 @@
   "type": "module",
   "main": "src/csw-client.ts",
   "scripts": {
-    "cli": "node src/node-cli.ts",
-    "check": "tsc --noEmit",
     "cf-typegen": "wrangler types",
-    "fmt": "biome format --write"
+    "check": "tsc --noEmit && wrangler deploy --dry-run",
+    "cli": "node src/node-cli.ts",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "fmt": "biome format --write",
+    "start": "wrangler dev"
   },
   "dependencies": {
     "sax": "^1.4.1"
