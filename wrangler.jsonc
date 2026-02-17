@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "csw-scraper",
+  "name": "gdi-de-csw-to-atproto",
   "main": "src/worker.ts",
   "compatibility_date": "2026-02-16",
   "kv_namespaces": [
@@ -9,6 +9,10 @@
       "id": "f48184c0efdd40938f2125a60da80fc1"
     }
   ],
+  // Run every 6 hours to fetch new/updated CSW records
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  },
   "observability": {
     "logs": {
       "enabled": true,
