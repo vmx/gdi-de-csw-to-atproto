@@ -12,7 +12,6 @@
  *   --max-records   Maximum records per page (default: 100)
  *   --max-total     Maximum total records to fetch (default: unlimited)
  *   --endpoint      CSW endpoint URL (default: GDI-DE)
- *   --output        Output format: json, summary, or ids (default: summary)
  *   --outfile       Write results to file instead of stdout
  *   --verbose       Log raw CSW XML responses to stderr
  *
@@ -68,49 +67,7 @@ const main = async () => {
   )
   console.error("")
 
-  // Format output based on --output flag
-  let output: string
-  const outputFormat = args.output || "summary"
-
-  switch (outputFormat) {
-    case "json":
-      // Full JSON output with all record details
-      output = JSON.stringify(
-        {
-          summary: result.summary,
-          records: result.records.map((r) => ({
-            identifier: r.identifier,
-            source: r.source,
-            dateStamp: r.dateStamp,
-          })),
-        },
-        null,
-        2,
-      )
-      break
-
-    case "ids":
-      // Just the source URLs, one per line
-      output = result.records.map((r) => r.source).join("\n")
-      break
-
-    case "summary":
-    default:
-      // Summary with list of records
-      output = JSON.stringify(
-        {
-          summary: result.summary,
-          records: result.records.map((r) => ({
-            identifier: r.identifier,
-            source: r.source,
-            dateStamp: r.dateStamp,
-          })),
-        },
-        null,
-        2,
-      )
-      break
-  }
+  const output = JSON.stringify(result, null, 2)
 
   if (args.outfile) {
     await writeFile(args.outfile, output, "utf-8")
@@ -161,7 +118,6 @@ Options:
   --endpoint      CSW endpoint URL (default: ${DEFAULT_CSW_ENDPOINT})
   --max-records   Maximum records per page (default: 100)
   --max-total     Maximum total records to fetch (default: unlimited)
-  --output        Output format: json, summary, or ids (default: summary)
   --outfile       Write results to file instead of stdout
   --verbose       Log raw CSW XML responses to stderr
   --help          Show this help message
@@ -172,9 +128,6 @@ Examples:
 
   # Fetch with limit and save to file
   node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
-
-  # Just get source URLs
-  node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --output ids
 `)
 }
 

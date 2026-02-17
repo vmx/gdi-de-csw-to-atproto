@@ -29,9 +29,6 @@ node src/node-cli.ts --start-date 2026-01-21T00:00:00Z
 # Limit results and save to file
 node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile results.json
 
-# Just get source URLs
-node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --output ids
-
 # Use a different endpoint
 node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
