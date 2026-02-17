@@ -1,5 +1,5 @@
-CSW Scraper
-===========
+gdi-de-csw-to-atproto
+=====================
 
 A CSW (Catalogue Service for the Web) client for scraping INSPIRE metadata records. Works in both Node.js and Cloudflare Workers.
 

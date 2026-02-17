@@ -1,6 +1,7 @@
 {
-  "name": "csw-scraper",
+  "name": "gdi-de-csw-to-atproto",
   "version": "0.1.0",
+  "private": true,
   "description": "CSW catalogue scraper - works in Node.js and Cloudflare Workers",
   "type": "module",
   "main": "src/csw-client.ts",

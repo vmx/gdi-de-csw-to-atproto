@@ -51,7 +51,7 @@ export default {
     const url = new URL(request.url)
 
     if (url.pathname === "/") {
-      return new Response("csw-scraper is running. Use /query to query CSW.")
+      return new Response("gdi-de-csw-to-atproto is running. Use /query to query CSW.")
     }
 
     if (url.pathname === "/query") {
