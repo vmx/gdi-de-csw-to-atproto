@@ -13,7 +13,7 @@
  *   --max-total     Maximum total records to fetch (default: unlimited)
  *   --endpoint      CSW endpoint URL (default: GDI-DE)
  *   --outfile       Write results to file instead of stdout
- *   --verbose       Log raw CSW XML responses to stderr
+ *   --verbose       Log raw CSW XML responses and curl-equivalent requests to stderr
  *
  * @module
  */
@@ -58,6 +58,14 @@ const main = async () => {
           `(${pageResult.pagination.totalMatched} total matched)`,
       )
     },
+    onRequest: args.verbose
+      ? (endpoint, body) => {
+          const singleLineBody = body.replace(/\s+/g, " ").trim()
+          console.error(
+            `curl -s -X POST '${endpoint}' -H 'Content-Type: application/xml' --data-raw '${singleLineBody}'`,
+          )
+        }
+      : null,
     onResponse: args.verbose ? (xml) => console.error(xml) : null,
   })
 
@@ -119,7 +127,7 @@ Options:
   --max-records   Maximum records per page (default: 100)
   --max-total     Maximum total records to fetch (default: unlimited)
   --outfile       Write results to file instead of stdout
-  --verbose       Log raw CSW XML responses to stderr
+  --verbose       Log curl-equivalent requests and raw XML responses to stderr
   --help          Show this help message
 
 Examples:

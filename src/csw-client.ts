@@ -227,6 +227,7 @@ const parseGetRecordsResponse = (
  * @param options.endDate - Optional ISO 8601 end date (exclusive upper bound)
  * @param options.maxRecords - Maximum records per request
  * @param options.startPosition - Starting position (1-based)
+ * @param options.onRequest - Optional callback called with the endpoint and XML request body
  * @param options.onResponse - Optional callback called with the raw XML response
  * @returns Result with records array and pagination info
  */
@@ -236,6 +237,7 @@ const fetchPage = async ({
   endDate,
   maxRecords = DEFAULT_MAX_RECORDS,
   startPosition = 1,
+  onRequest = null,
   onResponse = null,
 }: {
   endpoint: string
@@ -243,6 +245,7 @@ const fetchPage = async ({
   endDate?: string
   maxRecords?: number
   startPosition?: number
+  onRequest?: ((endpoint: string, body: string) => void) | null
   onResponse?: ((xml: string) => void) | null
 }): Promise<PageResult> => {
   const xmlBody = buildGetRecordsXml({
@@ -251,6 +254,10 @@ const fetchPage = async ({
     maxRecords,
     startPosition,
   })
+
+  if (onRequest) {
+    onRequest(endpoint, xmlBody)
+  }
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -292,6 +299,7 @@ const fetchPage = async ({
  * @param options.maxRecordsPerPage - Maximum records per request
  * @param options.maxTotalRecords - Maximum total records to fetch (for safety)
  * @param options.onPage - Optional callback called after each page
+ * @param options.onRequest - Optional callback called with the endpoint and XML request body
  * @param options.onResponse - Optional callback called with the raw XML response
  * @returns Result with all records and summary
  */
@@ -302,6 +310,7 @@ const fetchAllRecords = async ({
   maxRecordsPerPage = DEFAULT_MAX_RECORDS,
   maxTotalRecords = Infinity,
   onPage = null,
+  onRequest = null,
   onResponse = null,
 }: {
   endpoint: string
@@ -310,6 +319,7 @@ const fetchAllRecords = async ({
   maxRecordsPerPage?: number
   maxTotalRecords?: number
   onPage?: ((pageResult: PageResult, pageNumber: number) => void) | null
+  onRequest?: ((endpoint: string, body: string) => void) | null
   onResponse?: ((xml: string) => void) | null
 }): Promise<AllRecordsResult> => {
   const allRecords: CswRecord[] = []
@@ -324,6 +334,7 @@ const fetchAllRecords = async ({
       endpoint,
       startDate,
       endDate,
+      onRequest,
       onResponse,
       maxRecords: Math.min(
         maxRecordsPerPage,
