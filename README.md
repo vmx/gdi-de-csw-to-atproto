@@ -89,12 +89,25 @@ Deploy it to Cloudflare:
      npm run deploy
 
 
+Backfill
+--------
+
+To simulate the scheduled worker over a historical date range, use `backfill.sh`.
+It splits the range into 6-hour windows and runs the CLI for each one:
+
+```bash
+./backfill.sh --start-date 2026-01-01 --end-date 2026-02-01
+```
+
+Each window's JSON result is written to stdout; progress is logged to stderr.
+
 Files
 -----
 
 - `src/csw-client.ts` - Core library (platform-agnostic)
 - `src/worker.ts` - Cloudflare Worker entry point
 - `src/node-cli.ts` - Node.js CLI entry point
+- `backfill.sh` - Backfill script simulating the scheduled worker
 
 License
 -------
