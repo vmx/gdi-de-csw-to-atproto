@@ -1,0 +1,31 @@
+name: CSW Sync
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: csw-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm ci
+
+      # sync.ts reads the current cursor from CSW_CURSOR, fetches up to 10
+      # pages of CSW records, logs them to stderr, and prints the updated
+      # cursor JSON to stdout. That output is stored back as a repository
+      # variable so the next run can resume where this one left off.
+      - name: Run sync and update cursor
+        run: gh variable set CSW_CURSOR --body "$(node src/sync.ts)"
+        env:
+          CSW_CURSOR: ${{ vars.CSW_CURSOR }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

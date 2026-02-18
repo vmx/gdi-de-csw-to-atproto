@@ -368,4 +368,4 @@ const fetchAllRecords = async ({
 }
 
 export type { CswRecord, PageResult, AllRecordsResult }
-export { fetchAllRecords }
+export { fetchPage, fetchAllRecords }

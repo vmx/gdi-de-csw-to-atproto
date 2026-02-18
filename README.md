@@ -33,6 +33,17 @@ node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --max-total 500 --outfile
 node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://example.com/csw
 ```
 
+GitHub Actions Sync
+-------------------
+
+The sync workflow (`.github/workflows/sync.yml`) runs every 15 minutes.
+It fetches up to 10 pages of 200 CSW records per run, with a 1-minute
+pause between pages. The cursor (last run timestamp + pagination position)
+is stored as a GitHub repository variable `CSW_CURSOR` — no commits needed.
+
+If a bulk update produces more records than one run can handle, the cursor
+saves the position and the next run resumes from there automatically.
+
 Cloudflare Worker
 -----------------
 
@@ -107,6 +118,7 @@ Files
 - `src/csw-client.ts` - Core library (platform-agnostic)
 - `src/worker.ts` - Cloudflare Worker entry point
 - `src/node-cli.ts` - Node.js CLI entry point
+- `src/sync.ts` - GitHub Actions sync entry point
 - `backfill.sh` - Backfill script simulating the scheduled worker
 
 License
