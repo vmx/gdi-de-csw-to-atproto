@@ -8,50 +8,35 @@
  *
  * HTTP routes:
  *   - GET / — alive check
- *   - GET /query?startDate=...&endDate=...&maxRecords=...&maxTotal=...&endpoint=... — debug query
+ *   - GET /query?startDate=...&endDate=...&maxRecords=...&startPosition=...&endpoint=... — debug query
  *
  * Query parameters (for /query):
  *   - startDate: ISO 8601 date (required, e.g., 2026-01-21T00:00:00Z)
  *   - endDate: ISO 8601 end date, exclusive (optional)
  *   - maxRecords: Maximum records per page (optional, default 100)
- *   - maxTotal: Maximum total records to fetch (optional, default unlimited)
+ *   - startPosition: Starting position for pagination (optional, 1-based; returns a single page)
  *   - endpoint: CSW endpoint URL (optional, defaults to GDI-DE)
  *
  * @module
  */
 
-import { type AllRecordsResult, fetchAllRecords } from "./csw-client.ts"
+import {
+  type AllRecordsResult,
+  type PageResult,
+  fetchAllRecords,
+  fetchPage,
+} from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
-
-const queryCsw = async ({
-  startDate,
-  endDate,
-  endpoint = DEFAULT_CSW_ENDPOINT,
-  maxRecordsPerPage = 100,
-  maxTotalRecords = Infinity,
-}: {
-  startDate: string
-  endDate?: string
-  endpoint?: string
-  maxRecordsPerPage?: number
-  maxTotalRecords?: number
-}): Promise<AllRecordsResult> => {
-  return fetchAllRecords({
-    endpoint,
-    startDate,
-    endDate,
-    maxRecordsPerPage,
-    maxTotalRecords,
-  })
-}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
     if (url.pathname === "/") {
-      return new Response("gdi-de-csw-to-atproto is running. Use /query to query CSW.")
+      return new Response(
+        "gdi-de-csw-to-atproto is running. Use /query to query CSW.",
+      )
     }
 
     if (url.pathname === "/query") {
@@ -65,22 +50,33 @@ export default {
           )
         }
 
-        const endpoint = params.get("endpoint") || undefined
+        const endpoint = params.get("endpoint") || DEFAULT_CSW_ENDPOINT
         const endDate = params.get("endDate") || undefined
-        const maxRecordsPerPage = params.has("maxRecords")
+        const maxRecords = params.has("maxRecords")
           ? parseInt(params.get("maxRecords") as string, 10)
-          : undefined
-        const maxTotalRecords = params.has("maxTotal")
-          ? parseInt(params.get("maxTotal") as string, 10)
-          : undefined
+          : 100
 
-        const result = await queryCsw({
-          startDate,
-          endDate,
-          endpoint,
-          maxRecordsPerPage,
-          maxTotalRecords,
-        })
+        let result: PageResult | AllRecordsResult
+        if (params.has("startPosition")) {
+          const startPosition = parseInt(
+            params.get("startPosition") as string,
+            10,
+          )
+          result = await fetchPage({
+            endpoint,
+            startDate,
+            endDate,
+            maxRecords,
+            startPosition,
+          })
+        } else {
+          result = await fetchAllRecords({
+            endpoint,
+            startDate,
+            endDate,
+            maxRecordsPerPage: maxRecords,
+          })
+        }
 
         return Response.json(result)
       } catch (error) {
@@ -110,7 +106,11 @@ export default {
 
     await env.CSW_KV.put("lastRun", endDate)
 
-    const result = await queryCsw({ startDate, endDate })
+    const result = await fetchAllRecords({
+      endpoint: DEFAULT_CSW_ENDPOINT,
+      startDate,
+      endDate,
+    })
 
     console.log(
       `Scheduled run: fetched ${result.summary.totalFetched} of ${result.summary.totalMatched} records (${result.summary.pagesRequested} pages) from ${startDate} to ${endDate}\n${JSON.stringify(result)}`,

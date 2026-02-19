@@ -80,12 +80,16 @@ To run the worker locally:
 - `startDate` (required): ISO 8601 date (e.g., `2026-01-21T00:00:00Z`)
 - `endDate`: ISO 8601 end date, exclusive
 - `maxRecords`: Records per page (default: 100)
-- `maxTotal`: Maximum total records
+- `startPosition`: Starting position, 1-based (returns a single page instead of all pages)
 - `endpoint`: CSW endpoint URL
 
-Example:
+Examples:
 ```
-https://your-worker.workers.dev/query?startDate=2026-01-21T00:00:00Z&maxTotal=100
+# Fetch all records since a date
+https://your-worker.workers.dev/query?startDate=2026-01-21T00:00:00Z
+
+# Fetch a single page of 10 records starting at position 1 (the first page)
+https://your-worker.workers.dev/query?startDate=2026-01-21T00:00:00Z&maxRecords=10&startPosition=1
 ```
 
 When changing the `wrangler.jsonc` configuration, re-run the types generator:
