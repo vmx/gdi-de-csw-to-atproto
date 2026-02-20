@@ -1,6 +1,6 @@
 /**
  * CSW (Catalogue Service for the Web) Client
- * Works in both Cloudflare Workers and Node.js environments
+ * Works in Node.js environments
  * Uses SAX streaming parser for memory efficiency
  *
  * @module

@@ -2,24 +2,19 @@
   "name": "gdi-de-csw-to-atproto",
   "version": "0.1.0",
   "private": true,
-  "description": "CSW catalogue scraper - works in Node.js and Cloudflare Workers",
+  "description": "CSW client for syncing GDI-DE INSPIRE metadata to ATProto",
   "type": "module",
   "main": "src/csw-client.ts",
   "scripts": {
-    "cf-typegen": "wrangler types",
-    "check": "tsc --noEmit && wrangler deploy --dry-run",
+    "check": "tsc --noEmit",
     "cli": "node src/node-cli.ts",
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "fmt": "biome format --write",
-    "start": "wrangler dev"
+    "fmt": "biome format --write"
   },
   "dependencies": {
     "sax": "^1.4.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.15",
-    "@types/sax": "^1.2.7",
-    "wrangler": "^4.65.0"
+    "@types/sax": "^1.2.7"
   }
 }

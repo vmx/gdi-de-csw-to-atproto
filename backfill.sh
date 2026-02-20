@@ -1,5 +1,5 @@
 #!/bin/sh
-# Simulates the scheduled worker over a historical date range.
+# Queries CSW in 6-hour intervals over a historical date range.
 # Splits the range into 6-hour windows and runs node-cli for each one,
 # printing each window's JSON result to stdout.
 #
@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 usage() {
     echo "Usage: $0 --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD>"
     echo ""
-    echo "Simulates the scheduled worker by querying CSW in 6-hour intervals."
+    echo "Queries CSW in 6-hour intervals over a historical date range."
     echo ""
     echo "Options:"
     echo "  --start-date    Start date (e.g. 2026-01-01)"

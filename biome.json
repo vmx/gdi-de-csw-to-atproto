@@ -8,7 +8,7 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "includes": ["**", "!worker-configuration.d.ts"]
+    "includes": ["**"]
   },
   "javascript": {
     "formatter": {
