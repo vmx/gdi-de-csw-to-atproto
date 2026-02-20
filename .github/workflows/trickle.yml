@@ -1,0 +1,35 @@
+name: CSW Trickle
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: csw-sync
+  cancel-in-progress: false
+
+jobs:
+  trickle:
+    runs-on: ubuntu-slim
+
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm ci
+
+      # Processes up to 10 pages of 200 records with 1-minute pauses
+      # between pages. When all pending records are processed, disables
+      # this workflow so it stops running until the next bulk update.
+      - name: Run sync and update cursor
+        run: |
+          CURSOR=$(node src/sync.ts --max-pages 10)
+          gh variable set CSW_CURSOR --body "$CURSOR"
+          if echo "$CURSOR" | grep -q '"pending":null'; then
+            gh workflow disable trickle.yml
+          fi
+        env:
+          CSW_CURSOR: ${{ vars.CSW_CURSOR }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

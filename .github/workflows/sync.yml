@@ -2,7 +2,7 @@ name: CSW Sync
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-slim
-    timeout-minutes: 15
+
     permissions:
       actions: write
     steps:
@@ -20,12 +20,21 @@ jobs:
 
       - run: npm ci
 
-      # sync.ts reads the current cursor from CSW_CURSOR, fetches up to 10
-      # pages of CSW records, logs them to stderr, and prints the updated
-      # cursor JSON to stdout. That output is stored back as a repository
-      # variable so the next run can resume where this one left off.
+      # sync.ts reads the current cursor from CSW_CURSOR, fetches one page
+      # of CSW records, logs them to stderr, and prints the updated cursor
+      # JSON to stdout. That output is stored back as a repository variable
+      # so the next run can resume where this one left off.
+      # If there are more records than fit in one page, the trickle workflow
+      # is enabled to process the rest.
       - name: Run sync and update cursor
-        run: gh variable set CSW_CURSOR --body "$(node src/sync.ts)"
+        run: |
+          CURSOR=$(node src/sync.ts --max-pages 1)
+          gh variable set CSW_CURSOR --body "$CURSOR"
+          if echo "$CURSOR" | grep -q '"pending":null'; then
+            gh workflow disable trickle.yml 2>/dev/null || true
+          else
+            gh workflow enable trickle.yml
+          fi
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

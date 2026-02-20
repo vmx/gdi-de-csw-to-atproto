@@ -36,13 +36,18 @@ node src/node-cli.ts --start-date 2026-01-21T00:00:00Z --endpoint https://exampl
 GitHub Actions Sync
 -------------------
 
-The sync workflow (`.github/workflows/sync.yml`) runs every 15 minutes.
-It fetches up to 10 pages of 200 CSW records per run, with a 1-minute
-pause between pages. The cursor (last run timestamp + pagination position)
-is stored as a GitHub repository variable `CSW_CURSOR` — no commits needed.
+Two workflows handle syncing, sharing a concurrency group so they never
+run simultaneously:
 
-If a bulk update produces more records than one run can handle, the cursor
-saves the position and the next run resumes from there automatically.
+- **sync** (`.github/workflows/sync.yml`) — runs every 6 hours, fetches
+  one page of 200 records. If there are more, it enables the trickle
+  workflow.
+- **trickle** (`.github/workflows/trickle.yml`) — starts disabled, runs
+  every 15 minutes when enabled. Processes up to 10 pages of 200 records
+  per run with 1-minute pauses between pages. Disables itself when done.
+
+The cursor (last run timestamp + pagination position) is stored as a
+GitHub repository variable `CSW_CURSOR` — no commits needed.
 
 Cloudflare Worker
 -----------------
@@ -122,7 +127,7 @@ Files
 - `src/csw-client.ts` - Core library (platform-agnostic)
 - `src/worker.ts` - Cloudflare Worker entry point
 - `src/node-cli.ts` - Node.js CLI entry point
-- `src/sync.ts` - GitHub Actions sync entry point
+- `src/sync.ts` - GitHub Actions sync entry point (used by both sync and trickle workflows)
 - `backfill.sh` - Backfill script simulating the scheduled worker
 
 License

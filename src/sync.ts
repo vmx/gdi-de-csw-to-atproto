@@ -2,14 +2,20 @@
  * GitHub Actions Sync Script
  *
  * Reads the cursor from the CSW_CURSOR environment variable (a JSON string
- * set as a GitHub repository variable), fetches up to 10 pages of CSW
- * records (200 per page), logs them, then prints the updated cursor as JSON
- * to stdout for the workflow to store back as a repository variable.
+ * set as a GitHub repository variable), fetches CSW records, logs them,
+ * then prints the updated cursor as JSON to stdout for the workflow to
+ * store back as a repository variable.
+ *
+ * Usage:
+ *   node src/sync.ts [options]
+ *
+ * Options:
+ *   --max-pages     Max pages per run (default: 1)
  *
  * On each run:
  *   - If cursor.pending exists, resumes the in-progress window
  *   - Otherwise starts a new window from cursor.lastRun to now
- *   - Fetches up to MAX_PAGES_PER_RUN pages, sleeping 1 minute between each
+ *   - Fetches up to --max-pages pages, sleeping 1 minute between each
  *   - If more pages remain after the limit, saves the cursor and exits
  *   - If the window is fully processed, updates lastRun and clears pending
  *
@@ -20,7 +26,6 @@ import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const PAGE_SIZE = 200
-const MAX_PAGES_PER_RUN = 10
 const SLEEP_MS = 60_000 // 1 minute between pages
 
 interface Cursor {
@@ -34,6 +39,23 @@ interface Cursor {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const parseArgs = (argv: string[]): Record<string, string> => {
+  const args: Record<string, string> = {}
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+      if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
+        args[key] = argv[i + 1]
+        i++
+      } else {
+        args[key] = "true"
+      }
+    }
+  }
+  return args
+}
+
 const readCursor = (): Cursor => {
   const raw = process.env.CSW_CURSOR
   if (!raw) return { lastRun: null, pending: null }
@@ -45,9 +67,13 @@ const writeCursor = (cursor: Cursor): void => {
 }
 
 const main = async () => {
+  const args = parseArgs(process.argv.slice(2))
+  const maxPages = parseInt(args.maxPages ?? "1", 10)
+
   const cursor = readCursor()
   const now = new Date().toISOString()
 
+  // First run ever: look back 15 minutes
   const startDate = cursor.pending?.startDate
     ?? cursor.lastRun
     ?? new Date(Date.now() - 15 * 60 * 1000).toISOString()
@@ -64,8 +90,8 @@ const main = async () => {
 
   let position = startPosition
 
-  for (let page = 1; page <= MAX_PAGES_PER_RUN; page++) {
-    console.error(`Page ${page}/${MAX_PAGES_PER_RUN} (startPosition=${position})`)
+  for (let page = 1; page <= maxPages; page++) {
+    console.error(`Page ${page}/${maxPages} (startPosition=${position})`)
 
     const result = await fetchPage({
       endpoint: DEFAULT_CSW_ENDPOINT,
@@ -88,7 +114,7 @@ const main = async () => {
 
     position = result.pagination.nextRecord
 
-    if (page === MAX_PAGES_PER_RUN) {
+    if (page === maxPages) {
       writeCursor({
         lastRun: cursor.lastRun,
         pending: { startDate, endDate, startPosition: position },
