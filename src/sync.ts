@@ -22,6 +22,7 @@
  * @module
  */
 
+import { parseArgs } from "node:util"
 import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
@@ -39,23 +40,6 @@ interface Cursor {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const parseArgs = (argv: string[]): Record<string, string> => {
-  const args: Record<string, string> = {}
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
-    if (arg.startsWith("--")) {
-      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-      if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
-        args[key] = argv[i + 1]
-        i++
-      } else {
-        args[key] = "true"
-      }
-    }
-  }
-  return args
-}
-
 const readCursor = (): Cursor => {
   const raw = process.env.CSW_CURSOR
   if (!raw) return { lastRun: null, pending: null }
@@ -67,8 +51,12 @@ const writeCursor = (cursor: Cursor): void => {
 }
 
 const main = async () => {
-  const args = parseArgs(process.argv.slice(2))
-  const maxPages = parseInt(args.maxPages ?? "1", 10)
+  const { values } = parseArgs({
+    options: {
+      "max-pages": { type: "string", default: "1" },
+    },
+  })
+  const maxPages = parseInt(values["max-pages"], 10)
 
   const cursor = readCursor()
   const now = new Date().toISOString()

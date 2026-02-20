@@ -18,25 +18,39 @@
  * @module
  */
 
+import { parseArgs } from "node:util"
+import { writeFile } from "node:fs/promises"
 import { fetchAllRecords } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
-import { writeFile } from "fs/promises"
 
 const main = async () => {
-  const args = parseArgs(process.argv.slice(2))
+  const { values } = parseArgs({
+    options: {
+      "start-date": { type: "string" },
+      "end-date": { type: "string" },
+      "max-records": { type: "string", default: "100" },
+      "max-total": { type: "string" },
+      endpoint: { type: "string" },
+      outfile: { type: "string" },
+      verbose: { type: "boolean", default: false },
+      help: { type: "boolean", default: false },
+    },
+  })
 
-  if (args.help || !args.startDate) {
+  if (values.help || !values["start-date"]) {
     printUsage()
-    process.exit(args.help ? 0 : 1)
+    process.exit(values.help ? 0 : 1)
   }
 
   const options = {
-    endpoint: args.endpoint || DEFAULT_CSW_ENDPOINT,
-    startDate: args.startDate,
-    endDate: args.endDate,
-    maxRecordsPerPage: parseInt(args.maxRecords || "100", 10),
-    maxTotalRecords: args.maxTotal ? parseInt(args.maxTotal, 10) : Infinity,
+    endpoint: values.endpoint || DEFAULT_CSW_ENDPOINT,
+    startDate: values["start-date"],
+    endDate: values["end-date"],
+    maxRecordsPerPage: parseInt(values["max-records"], 10),
+    maxTotalRecords: values["max-total"]
+      ? parseInt(values["max-total"], 10)
+      : Infinity,
   }
 
   console.error(`Fetching CSW records since ${options.startDate}...`)
@@ -58,7 +72,7 @@ const main = async () => {
           `(${pageResult.pagination.totalMatched} total matched)`,
       )
     },
-    onRequest: args.verbose
+    onRequest: values.verbose
       ? (endpoint, body) => {
           const singleLineBody = body.replace(/\s+/g, " ").trim()
           console.error(
@@ -66,7 +80,7 @@ const main = async () => {
           )
         }
       : null,
-    onResponse: args.verbose ? (xml) => console.error(xml) : null,
+    onResponse: values.verbose ? (xml) => console.error(xml) : null,
   })
 
   console.error("")
@@ -77,38 +91,12 @@ const main = async () => {
 
   const output = JSON.stringify(result, null, 2)
 
-  if (args.outfile) {
-    await writeFile(args.outfile, output, "utf-8")
-    console.error(`Results written to ${args.outfile}`)
+  if (values.outfile) {
+    await writeFile(values.outfile, output, "utf-8")
+    console.error(`Results written to ${values.outfile}`)
   } else {
     console.log(output)
   }
-}
-
-/**
- * Parse CLI arguments into a key-value map.
- * Converts kebab-case flags to camelCase.
- *
- * @param argv - Command line arguments (without node and script path)
- * @returns Parsed arguments as key-value pairs
- */
-const parseArgs = (argv: string[]): Record<string, string> => {
-  const args: Record<string, string> = {}
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
-    if (arg.startsWith("--")) {
-      // Convert kebab-case to camelCase for internal use
-      const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-      // Check if next arg is a value or another flag
-      if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
-        args[key] = argv[i + 1]
-        i++
-      } else {
-        args[key] = "true"
-      }
-    }
-  }
-  return args
 }
 
 const printUsage = () => {
