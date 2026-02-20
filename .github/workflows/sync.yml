@@ -30,7 +30,7 @@ jobs:
         run: |
           CURSOR=$(node src/sync.ts --max-pages 1)
           gh variable set CSW_CURSOR --body "$CURSOR"
-          if echo "$CURSOR" | grep -q '"pending":null'; then
+          if echo "$CURSOR" | jq -e '.pending == null' > /dev/null; then
             gh workflow disable trickle.yml 2>/dev/null || true
           else
             gh workflow enable trickle.yml
