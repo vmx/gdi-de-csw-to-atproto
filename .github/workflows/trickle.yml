@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-slim
 
     permissions:
-      actions: write
+      # To make it work for private repos
       contents: read
     steps:
       - uses: actions/checkout@v6
@@ -27,10 +27,12 @@ jobs:
       - name: Run sync and update cursor
         run: |
           CURSOR=$(node src/sync.ts --max-pages 10)
-          gh variable set CSW_CURSOR --body "$CURSOR"
-          if echo "$CURSOR" | jq -e '.pending == null' > /dev/null; then
+          gh variable list
+          gh variable set CSW_CURSOR --body "${CURSOR}"
+          if echo "${CURSOR}" | jq -e '.pending == null' > /dev/null; then
+            echo "Disable trickle workflow"
             gh workflow disable trickle.yml
           fi
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB_ACTIONS }}
