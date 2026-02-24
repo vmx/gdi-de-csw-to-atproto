@@ -48,6 +48,10 @@ run simultaneously:
 The cursor (last run timestamp + pagination position) is stored as a
 GitHub repository variable `CSW_CURSOR` — no commits needed.
 
+Set `TIME_OFFSET_DAYS` to shift "now" back by a number of days, useful
+for simulating past runs (e.g. `TIME_OFFSET_DAYS=14` to replay activity
+from two weeks ago).
+
 Backfill
 --------
 

@@ -12,6 +12,9 @@
  * Options:
  *   --max-pages     Max pages per run (default: 1)
  *
+ * Environment variables:
+ *   TIME_OFFSET_DAYS  Shift "now" back by this many days (default: 0)
+ *
  * On each run:
  *   - If cursor.pending exists, resumes the in-progress window
  *   - Otherwise starts a new window from cursor.lastRun to now
@@ -59,12 +62,14 @@ const main = async () => {
   const maxPages = parseInt(values["max-pages"], 10)
 
   const cursor = readCursor()
-  const now = new Date().toISOString()
+  const offsetMs =
+    parseInt(process.env.TIME_OFFSET_DAYS ?? "0", 10) * 24 * 60 * 60 * 1000
+  const now = new Date(Date.now() - offsetMs).toISOString()
 
   // First run ever: look back 15 minutes
   const startDate = cursor.pending?.startDate
     ?? cursor.lastRun
-    ?? new Date(Date.now() - 15 * 60 * 1000).toISOString()
+    ?? new Date(Date.now() - offsetMs - 15 * 60 * 1000).toISOString()
   const endDate = cursor.pending?.endDate ?? now
   const startPosition = cursor.pending?.startPosition ?? 1
 
