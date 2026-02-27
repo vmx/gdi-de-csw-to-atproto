@@ -11,13 +11,18 @@ concurrency:
 
 jobs:
   trickle:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     permissions:
       # To make it work for private repos
       contents: read
     steps:
       - uses: actions/checkout@v6
+
+      # Make sure it's at least Node v24 that supports TypeScript
+      - uses: actions/setup-node@v6
+        with:
+         node-version: 'lts/*'
 
       - run: npm ci
 
