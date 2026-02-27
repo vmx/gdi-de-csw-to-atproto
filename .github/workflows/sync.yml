@@ -54,4 +54,4 @@ jobs:
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
           GH_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB_ACTIONS }}
-          TIME_OFFSET_DAYS: "18"
+          TIME_OFFSET_DAYS: "19"
