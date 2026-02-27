@@ -72,6 +72,12 @@ Files
 - `src/sync.ts` - GitHub Actions sync entry point (used by both sync and trickle workflows)
 - `backfill.sh` - Backfill script for historical date ranges
 
+Development
+-----------
+
+This project was built as an exploration of AI-assisted software development,
+using AI coding assistants extensively to learn what's possible today.
+
 License
 -------
 
