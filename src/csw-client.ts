@@ -20,6 +20,8 @@ interface CswRecord {
   dateStamp: string | null
   /** Title from the citation */
   title: string | null
+  /** Abstract from the identification info */
+  abstract: string | null
 }
 
 /** Pagination info from the CSW SearchResults element */
@@ -162,6 +164,7 @@ const parseGetRecordsResponse = (
         source: null,
         dateStamp: null,
         title: null,
+        abstract: null,
       }
     }
   }
@@ -204,6 +207,10 @@ const parseGetRecordsResponse = (
         )
       ) {
         currentRecord.title = textBuffer.trim()
+      }
+      // Extract abstract
+      else if (pathStr.endsWith("gmd:abstract/gco:CharacterString")) {
+        currentRecord.abstract = textBuffer.trim()
       }
     }
 
