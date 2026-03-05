@@ -7,13 +7,11 @@ export interface AtpSession {
   did: string
 }
 
-export interface AtpApplyWrites {
+export interface AtpApplyWritesCreate {
   jwt: string
   repo: string
   writes: {
-    $type:
-      | "com.atproto.repo.applyWrites#create"
-      | "com.atproto.repo.applyWrites#update"
+    $type: "com.atproto.repo.applyWrites#create"
     collection: string
     rkey: string
     value: unknown
@@ -21,7 +19,7 @@ export interface AtpApplyWrites {
 }
 
 // TODO vmx 2026-01-21: add proper definition.
-export interface AtpApplyWritesResp {}
+export interface AtpApplyWritesCreateResp {}
 
 const PDS = "https://bsky.social"
 
@@ -79,11 +77,11 @@ export async function atpRecordExists(
   throw new Error(`atpRecordExists failed: unexpected status ${resp.status}`)
 }
 
-export async function atpApplyWrites({
+export async function atpApplyWritesCreate({
   jwt,
   repo,
   writes,
-}: AtpApplyWrites): Promise<AtpApplyWritesResp> {
+}: AtpApplyWritesCreate): Promise<AtpApplyWritesCreateResp> {
   const url = new URL("/xrpc/com.atproto.repo.applyWrites", PDS)
   const body = {
     repo,
@@ -110,5 +108,5 @@ export async function atpApplyWrites({
     throw new Error(`applyWrites failed: ${resp.status} ${err}`)
   }
 
-  return resp.json() as Promise<AtpApplyWritesResp>
+  return resp.json() as Promise<AtpApplyWritesCreateResp>
 }

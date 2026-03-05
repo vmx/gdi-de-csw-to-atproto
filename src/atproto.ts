@@ -1,11 +1,11 @@
 // Convenience layer on top of atproto-client.ts for use in GitHub Actions.
 // Reads credentials from environment variables (GitHub secrets) and provides
 // a simple interface for posting CSW records as cx.vmx.matadisco records
-// with deterministic rkeys (the CSW identifier).
+// with deterministic rkeys (identifier + dateStamp).
 
 import {
   type AtpSession,
-  atpApplyWrites,
+  atpApplyWritesCreate,
   atpCreateSession,
   atpRecordExists,
 } from "./atproto-client.ts"
@@ -31,14 +31,15 @@ export const createSessionFromEnv = (): Promise<AtpSession> => {
 const metadataUrl = (endpoint: string, identifier: string): string =>
   `${endpoint}?service=CSW&version=2.0.2&request=GetRecordById&id=${encodeURIComponent(identifier)}&elementsetname=full&outputSchema=http://www.isotc211.org/2005/gmd`
 
-const toWrite = (
-  endpoint: string,
-  r: CswRecord,
-  $type: "com.atproto.repo.applyWrites#create" | "com.atproto.repo.applyWrites#update",
-) => ({
-  $type,
+const toRkey = (r: CswRecord): string => {
+  const dateDigits = (r.dateStamp ?? "").replace(/\D/g, "")
+  return `${r.identifier!}.${dateDigits}`
+}
+
+const toWrite = (endpoint: string, r: CswRecord) => ({
+  $type: "com.atproto.repo.applyWrites#create" as const,
   collection: COLLECTION,
-  rkey: r.identifier!,
+  rkey: toRkey(r),
   value: {
     metadata: metadataUrl(endpoint, r.identifier!),
     created: r.dateStamp,
@@ -55,11 +56,12 @@ const toWrite = (
 
 /**
  * Post CSW records as cx.vmx.matadisco records with deterministic rkeys.
- * The CSW identifier is used as the rkey, making writes idempotent.
+ * The rkey is identifier + dateStamp digits, so each version of a record
+ * gets its own rkey. Retrying the same data is idempotent.
  * Records without an identifier are skipped.
- * Uses optimistic create: tries #create first, and on failure checks each
- * record with getRecord to determine which already exist, then retries
- * with the correct mix of #create and #update.
+ *
+ * Uses optimistic create: tries #create first, and on failure filters out
+ * records that already exist, then retries with only the new ones.
  */
 export const putRecords = async (
   session: AtpSession,
@@ -67,12 +69,10 @@ export const putRecords = async (
   records: CswRecord[],
 ) => {
   const validRecords = records.filter((r) => r.identifier !== null)
-  const writes = validRecords.map((r) =>
-    toWrite(endpoint, r, "com.atproto.repo.applyWrites#create"),
-  )
+  const writes = validRecords.map((r) => toWrite(endpoint, r))
 
   try {
-    await atpApplyWrites({
+    await atpApplyWritesCreate({
       jwt: session.accessJwt,
       repo: session.did,
       writes,
@@ -84,28 +84,21 @@ export const putRecords = async (
 
     const existing = await Promise.all(
       validRecords.map((r) =>
-        atpRecordExists(session.did, COLLECTION, r.identifier!),
+        atpRecordExists(session.did, COLLECTION, toRkey(r)),
       ),
     )
 
-    const retryWrites = validRecords.map((r, idx) =>
-      toWrite(
-        endpoint,
-        r,
-        existing[idx]
-          ? "com.atproto.repo.applyWrites#update"
-          : "com.atproto.repo.applyWrites#create",
-      ),
+    const newWrites = writes.filter((_, idx) => !existing[idx])
+    console.error(
+      `${existing.filter((e) => e).length} already exist, retrying ${newWrites.length} new records`,
     )
 
-    const creates = existing.filter((e) => !e).length
-    const updates = existing.filter((e) => e).length
-    console.error(`Retrying batch: ${creates} creates, ${updates} updates`)
-
-    await atpApplyWrites({
-      jwt: session.accessJwt,
-      repo: session.did,
-      writes: retryWrites,
-    })
+    if (newWrites.length > 0) {
+      await atpApplyWritesCreate({
+        jwt: session.accessJwt,
+        repo: session.did,
+        writes: newWrites,
+      })
+    }
   }
 }
