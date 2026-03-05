@@ -5,8 +5,9 @@
 
 import {
   type AtpSession,
-  atpApplyWritesCreate,
+  atpApplyWrites,
   atpCreateSession,
+  atpRecordExists,
 } from "./atproto-client.ts"
 import type { CswRecord } from "./csw-client.ts"
 
@@ -31,8 +32,12 @@ export const createSessionFromEnv = (): Promise<AtpSession> => {
 const metadataUrl = (endpoint: string, identifier: string): string =>
   `${endpoint}?service=CSW&version=2.0.2&request=GetRecordById&id=${encodeURIComponent(identifier)}&elementsetname=full&outputSchema=http://www.isotc211.org/2005/gmd`
 
-const toWrite = (endpoint: string, r: CswRecord) => ({
-  $type: "com.atproto.repo.applyWrites#create" as const,
+const toWrite = (
+  endpoint: string,
+  r: CswRecord,
+  $type: "com.atproto.repo.applyWrites#create" | "com.atproto.repo.applyWrites#update",
+) => ({
+  $type,
   collection: COLLECTION,
   rkey: r.identifier!,
   value: {
@@ -54,22 +59,60 @@ const toWrite = (endpoint: string, r: CswRecord) => ({
  * The CSW identifier is used as the rkey, making writes idempotent.
  * Records without an identifier are skipped.
  * Records are sent in batches of 100 to stay within PDS payload limits.
+ *
+ * Uses optimistic create: tries #create first, and on failure checks each
+ * record with getRecord to determine which already exist, then retries
+ * with the correct mix of #create and #update.
  */
 export const putRecords = async (
   session: AtpSession,
   endpoint: string,
   records: CswRecord[],
 ) => {
-  const writes = records
-    .filter((r) => r.identifier !== null)
-    .map((r) => toWrite(endpoint, r))
+  const validRecords = records.filter((r) => r.identifier !== null)
 
-  for (let i = 0; i < writes.length; i += BATCH_SIZE) {
-    const batch = writes.slice(i, i + BATCH_SIZE)
-    await atpApplyWritesCreate({
-      jwt: session.accessJwt,
-      repo: session.did,
-      writes: batch,
-    })
+  for (let i = 0; i < validRecords.length; i += BATCH_SIZE) {
+    const batch = validRecords.slice(i, i + BATCH_SIZE)
+    const writes = batch.map((r) =>
+      toWrite(endpoint, r, "com.atproto.repo.applyWrites#create"),
+    )
+
+    try {
+      await atpApplyWrites({
+        jwt: session.accessJwt,
+        repo: session.did,
+        writes,
+      })
+    } catch {
+      console.error(
+        "Batch create failed, checking which records already exist...",
+      )
+
+      const existing = await Promise.all(
+        batch.map((r) =>
+          atpRecordExists(session.did, COLLECTION, r.identifier!),
+        ),
+      )
+
+      const retryWrites = batch.map((r, idx) =>
+        toWrite(
+          endpoint,
+          r,
+          existing[idx]
+            ? "com.atproto.repo.applyWrites#update"
+            : "com.atproto.repo.applyWrites#create",
+        ),
+      )
+
+      const creates = existing.filter((e) => !e).length
+      const updates = existing.filter((e) => e).length
+      console.error(`Retrying batch: ${creates} creates, ${updates} updates`)
+
+      await atpApplyWrites({
+        jwt: session.accessJwt,
+        repo: session.did,
+        writes: retryWrites,
+      })
+    }
   }
 }

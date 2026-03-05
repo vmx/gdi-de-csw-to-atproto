@@ -7,11 +7,13 @@ export interface AtpSession {
   did: string
 }
 
-export interface AtpApplyWritesCreate {
+export interface AtpApplyWrites {
   jwt: string
   repo: string
   writes: {
-    $type: "com.atproto.repo.applyWrites#create"
+    $type:
+      | "com.atproto.repo.applyWrites#create"
+      | "com.atproto.repo.applyWrites#update"
     collection: string
     rkey: string
     value: unknown
@@ -19,7 +21,7 @@ export interface AtpApplyWritesCreate {
 }
 
 // TODO vmx 2026-01-21: add proper definition.
-export interface AtpApplyWritesCreateResp {}
+export interface AtpApplyWritesResp {}
 
 const PDS = "https://bsky.social"
 
@@ -54,14 +56,34 @@ export async function atpCreateSession(
     throw new Error(`Authentication failed: ${resp.status} ${err}`)
   }
 
-  return resp.json()
+  return resp.json() as Promise<AtpSession>
 }
 
-export async function atpApplyWritesCreate({
+export async function atpRecordExists(
+  repo: string,
+  collection: string,
+  rkey: string,
+): Promise<boolean> {
+  const url = new URL("/xrpc/com.atproto.repo.getRecord", PDS)
+  url.searchParams.set("repo", repo)
+  url.searchParams.set("collection", collection)
+  url.searchParams.set("rkey", rkey)
+
+  const resp = await fetch(url, { method: "HEAD" })
+
+  logRateLimits(resp)
+
+  if (resp.status === 200) return true
+  if (resp.status === 404) return false
+
+  throw new Error(`atpRecordExists failed: unexpected status ${resp.status}`)
+}
+
+export async function atpApplyWrites({
   jwt,
   repo,
   writes,
-}: AtpApplyWritesCreate): Promise<AtpApplyWritesCreateResp> {
+}: AtpApplyWrites): Promise<AtpApplyWritesResp> {
   const url = new URL("/xrpc/com.atproto.repo.applyWrites", PDS)
   const body = {
     repo,
@@ -85,8 +107,8 @@ export async function atpApplyWritesCreate({
 
   if (!resp.ok) {
     const err = await resp.text().catch(() => "(unknown error)")
-    throw new Error(`applytWrites failed: ${resp.status} ${err}`)
+    throw new Error(`applyWrites failed: ${resp.status} ${err}`)
   }
 
-  return resp.json()
+  return resp.json() as Promise<AtpApplyWritesResp>
 }
