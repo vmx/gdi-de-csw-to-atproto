@@ -27,6 +27,7 @@
  */
 
 import { parseArgs } from "node:util"
+import type { AtpSession } from "./atproto-client.ts"
 import { createSessionFromEnv, putRecords } from "./atproto.ts"
 import { fetchPage } from "./csw-client.ts"
 
@@ -83,9 +84,7 @@ const main = async () => {
     console.error(`New window: ${startDate} → ${endDate}`)
   }
 
-  const session = await createSessionFromEnv()
-  console.error(`Authenticated as ${session.handle}`)
-
+  let session: AtpSession | null = null
   let position = startPosition
 
   for (let page = 1; page <= maxPages; page++) {
@@ -104,6 +103,10 @@ const main = async () => {
     )
 
     if (result.records.length > 0) {
+      if (!session) {
+        session = await createSessionFromEnv()
+        console.error(`Authenticated as ${session.handle}`)
+      }
       await putRecords(session, DEFAULT_CSW_ENDPOINT, result.records)
       console.error(`Posted ${result.records.length} records to ATProto`)
     }
