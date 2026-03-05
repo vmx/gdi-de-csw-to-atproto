@@ -69,13 +69,16 @@ export async function atpApplyWritesCreate({
     validate: false,
   }
 
+  const bodyStr = JSON.stringify(body)
+  console.error(`applyWrites: ${writes.length} writes, ${Buffer.byteLength(bodyStr)} bytes`)
+
   const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${jwt}`,
     },
-    body: JSON.stringify(body),
+    body: bodyStr,
   })
 
   logRateLimits(resp)
