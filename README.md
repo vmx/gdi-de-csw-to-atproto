@@ -39,14 +39,18 @@ Two workflows handle syncing, sharing a concurrency group so they never
 run simultaneously:
 
 - **sync** (`.github/workflows/sync.yml`) — runs every 6 hours, fetches
-  one page of 200 records. If there are more, it enables the trickle
-  workflow.
+  one page of 200 records, posts them to ATProto. If there are more, it
+  enables the trickle workflow.
 - **trickle** (`.github/workflows/trickle.yml`) — starts disabled, runs
   every 15 minutes when enabled. Processes up to 10 pages of 200 records
-  per run with 1-minute pauses between pages. Disables itself when done.
+  per run with 1-minute pauses between pages, posting each page to
+  ATProto. Disables itself when done.
 
 The cursor (last run timestamp + pagination position) is stored as a
 GitHub repository variable `CSW_CURSOR` — no commits needed.
+
+ATProto credentials are stored as GitHub secrets `BLUESKY_IDENTIFIER`
+and `BLUESKY_PASSWORD`.
 
 Set `TIME_OFFSET_DAYS` to shift "now" back by a number of days, useful
 for simulating past runs (e.g. `TIME_OFFSET_DAYS=14` to replay activity
@@ -67,7 +71,9 @@ Each window's JSON result is written to stdout; progress is logged to stderr.
 Files
 -----
 
-- `src/csw-client.ts` - Core library (platform-agnostic)
+- `src/csw-client.ts` - Core CSW library (platform-agnostic)
+- `src/atproto-client.ts` - Minimal ATProto client
+- `src/atproto.ts` - ATProto convenience layer for posting metadata records
 - `src/node-cli.ts` - Node.js CLI entry point
 - `src/sync.ts` - GitHub Actions sync entry point (used by both sync and trickle workflows)
 - `backfill.sh` - Backfill script for historical date ranges

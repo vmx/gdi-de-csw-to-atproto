@@ -2,9 +2,9 @@
  * GitHub Actions Sync Script
  *
  * Reads the cursor from the CSW_CURSOR environment variable (a JSON string
- * set as a GitHub repository variable), fetches CSW records, logs them,
- * then prints the updated cursor as JSON to stdout for the workflow to
- * store back as a repository variable.
+ * set as a GitHub repository variable), fetches CSW records, posts them to
+ * ATProto, then prints the updated cursor as JSON to stdout for the workflow
+ * to store back as a repository variable.
  *
  * Usage:
  *   node src/sync.ts [options]
@@ -19,6 +19,7 @@
  *   - If cursor.pending exists, resumes the in-progress window
  *   - Otherwise starts a new window from cursor.lastRun to now
  *   - Fetches up to --max-pages pages, sleeping 1 minute between each
+ *   - Posts each page of records to ATProto as a batch
  *   - If more pages remain after the limit, saves the cursor and exits
  *   - If the window is fully processed, updates lastRun and clears pending
  *
@@ -26,6 +27,7 @@
  */
 
 import { parseArgs } from "node:util"
+import { createSessionFromEnv, putRecords } from "./atproto.ts"
 import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
@@ -81,6 +83,9 @@ const main = async () => {
     console.error(`New window: ${startDate} → ${endDate}`)
   }
 
+  const session = await createSessionFromEnv()
+  console.error(`Authenticated as ${session.handle}`)
+
   let position = startPosition
 
   for (let page = 1; page <= maxPages; page++) {
@@ -97,7 +102,11 @@ const main = async () => {
     console.error(
       `Fetched ${result.records.length} records (${result.pagination.totalMatched} total matched)`,
     )
-    console.error(JSON.stringify(result.records))
+
+    if (result.records.length > 0) {
+      await putRecords(session, DEFAULT_CSW_ENDPOINT, result.records)
+      console.error(`Posted ${result.records.length} records to ATProto`)
+    }
 
     if (!result.pagination.hasMore) {
       writeCursor({ lastRun: endDate, pending: null })

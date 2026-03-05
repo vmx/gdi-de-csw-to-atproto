@@ -27,7 +27,7 @@ jobs:
       - run: npm ci
 
       # sync.ts reads the current cursor from CSW_CURSOR, fetches one page
-      # of CSW records, logs them to stderr, and prints the updated cursor
+      # of CSW records, posts them to ATProto, and prints the updated cursor
       # JSON to stdout. That output is stored back as a repository variable
       # so the next run can resume where this one left off.
       # If there are more records than fit in one page, the trickle workflow
@@ -58,4 +58,6 @@ jobs:
           fi
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
+          BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
+          BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
           GH_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB_ACTIONS }}

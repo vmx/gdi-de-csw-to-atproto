@@ -40,4 +40,6 @@ jobs:
           fi
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
+          BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
+          BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
           GH_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB_ACTIONS }}
