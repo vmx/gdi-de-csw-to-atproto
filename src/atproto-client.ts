@@ -74,7 +74,7 @@ export async function atpRecordExists(
   logRateLimits(resp)
 
   if (resp.status === 200) return true
-  if (resp.status === 404) return false
+  if (resp.status === 400) return false
 
   throw new Error(`atpRecordExists failed: unexpected status ${resp.status}`)
 }
