@@ -32,7 +32,7 @@ import { createSessionFromEnv, putRecords } from "./atproto.ts"
 import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
-const PAGE_SIZE = 200
+const PAGE_SIZE = 100
 const SLEEP_MS = 60_000 // 1 minute between pages
 
 interface Cursor {
