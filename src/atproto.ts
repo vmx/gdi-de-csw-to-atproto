@@ -53,7 +53,12 @@ export const putRecords = (
           metadata: metadataUrl(endpoint, r.identifier!),
           created: r.dateStamp,
           preview: r.abstract
-            ? { mimeType: "text/plain", data: r.abstract }
+            ? {
+                mimeType: "text/markdown",
+                data: r.title
+                  ? `# ${r.title}\n\n${r.abstract}`
+                  : r.abstract,
+              }
             : undefined,
         },
       })),
