@@ -77,10 +77,11 @@ export const putRecords = async (
       repo: session.did,
       writes,
     })
-  } catch {
+  } catch (err) {
     console.error(
-      "Batch create failed, checking which records already exist...",
+      `Batch create failed: ${err instanceof Error ? err.message : err}`,
     )
+    console.error("Checking which records already exist...")
 
     const existing = await Promise.all(
       validRecords.map((r) =>
