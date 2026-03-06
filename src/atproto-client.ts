@@ -81,7 +81,7 @@ export async function atpApplyWritesCreate({
   jwt,
   repo,
   writes,
-}: AtpApplyWritesCreate): Promise<AtpApplyWritesCreateResp> {
+}: AtpApplyWritesCreate): Promise<void> {
   const url = new URL("/xrpc/com.atproto.repo.applyWrites", PDS)
   const body = {
     repo,
@@ -103,10 +103,19 @@ export async function atpApplyWritesCreate({
 
   logRateLimits(resp)
 
+  if (resp.status === 413) {
+    if (writes.length <= 1) {
+      throw new Error("applyWrites failed: batch with a single write exceeds payload limit")
+    }
+    const mid = Math.ceil(writes.length / 2)
+    console.error(`Payload too large, splitting batch into ${mid} + ${writes.length - mid}`)
+    await atpApplyWritesCreate({ jwt, repo, writes: writes.slice(0, mid) })
+    await atpApplyWritesCreate({ jwt, repo, writes: writes.slice(mid) })
+    return
+  }
+
   if (!resp.ok) {
     const err = await resp.text().catch(() => "(unknown error)")
     throw new Error(`applyWrites failed: ${resp.status} ${err}`)
   }
-
-  return resp.json() as Promise<AtpApplyWritesCreateResp>
 }
