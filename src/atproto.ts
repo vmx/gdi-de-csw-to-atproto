@@ -45,9 +45,9 @@ const toWrite = (endpoint: string, r: CswRecord) => ({
     created: r.dateStamp,
     preview: r.abstract
       ? {
-          mimeType: "text/markdown",
+          mimeType: "text/plain",
           data: r.title
-            ? `# ${r.title}\n\n${r.abstract}`
+            ? `${r.title}\n\n${r.abstract}`
             : r.abstract,
         }
       : undefined,
