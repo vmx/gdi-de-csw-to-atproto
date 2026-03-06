@@ -32,8 +32,9 @@ const metadataUrl = (endpoint: string, identifier: string): string =>
   `${endpoint}?service=CSW&version=2.0.2&request=GetRecordById&id=${encodeURIComponent(identifier)}&elementsetname=full&outputSchema=http://www.isotc211.org/2005/gmd`
 
 const toRkey = (r: CswRecord): string => {
+  const safeId = r.identifier!.replace(/[^A-Za-z0-9._:~-]/g, "_")
   const dateDigits = (r.dateStamp ?? "").replace(/\D/g, "")
-  return `${r.identifier!}.${dateDigits}`
+  return `${safeId}.${dateDigits}`
 }
 
 const toWrite = (endpoint: string, r: CswRecord) => ({
