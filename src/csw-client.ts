@@ -119,7 +119,7 @@ const buildGetRecordsXml = ({
 const parseGetRecordsResponse = (
   xmlText: string,
 ): { pagination: Pagination; records: CswRecord[] } => {
-  const parser = sax.parser(true, { trim: true, normalize: true })
+  const parser = sax.parser(true, { trim: true })
 
   const result: { pagination: Pagination; records: CswRecord[] } = {
     pagination: {
@@ -183,7 +183,7 @@ const parseGetRecordsResponse = (
           "gmd:MD_Metadata/gmd:fileIdentifier/gco:CharacterString",
         )
       ) {
-        currentRecord.identifier = textBuffer.trim()
+        currentRecord.identifier = textBuffer
       }
       // Extract source URL from gmd:identificationInfo/*/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString
       else if (
@@ -191,14 +191,14 @@ const parseGetRecordsResponse = (
           "gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString",
         )
       ) {
-        currentRecord.source = textBuffer.trim()
+        currentRecord.source = textBuffer
       }
       // Extract dateStamp
       else if (
         pathStr.endsWith("gmd:dateStamp/gco:DateTime") ||
         pathStr.endsWith("gmd:dateStamp/gco:Date")
       ) {
-        currentRecord.dateStamp = textBuffer.trim()
+        currentRecord.dateStamp = textBuffer
       }
       // Extract title from identification info
       else if (
@@ -206,11 +206,11 @@ const parseGetRecordsResponse = (
           "gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString",
         )
       ) {
-        currentRecord.title = textBuffer.trim()
+        currentRecord.title = textBuffer
       }
       // Extract abstract
       else if (pathStr.endsWith("gmd:abstract/gco:CharacterString")) {
-        currentRecord.abstract = textBuffer.trim()
+        currentRecord.abstract = textBuffer
       }
     }
 
