@@ -57,6 +57,9 @@ export async function atpCreateSession(
   return resp.json() as Promise<AtpSession>
 }
 
+const RECORD_EXISTS_RETRIES = 3
+const RECORD_EXISTS_RETRY_DELAY_MS = 2000
+
 export async function atpRecordExists(
   repo: string,
   collection: string,
@@ -67,14 +70,27 @@ export async function atpRecordExists(
   url.searchParams.set("collection", collection)
   url.searchParams.set("rkey", rkey)
 
-  const resp = await fetch(url, { method: "HEAD" })
+  for (let attempt = 1; attempt <= RECORD_EXISTS_RETRIES; attempt++) {
+    const resp = await fetch(url, { method: "HEAD" })
 
-  logRateLimits(resp)
+    logRateLimits(resp)
 
-  if (resp.status === 200) return true
-  if (resp.status === 400) return false
+    if (resp.status === 200) return true
+    if (resp.status === 400) return false
 
-  throw new Error(`atpRecordExists failed: unexpected status ${resp.status}`)
+    if (resp.status >= 500 && attempt < RECORD_EXISTS_RETRIES) {
+      console.error(
+        `atpRecordExists: got ${resp.status} for ${rkey}, retrying (${attempt}/${RECORD_EXISTS_RETRIES})...`,
+      )
+      await new Promise((resolve) => setTimeout(resolve, RECORD_EXISTS_RETRY_DELAY_MS))
+      continue
+    }
+
+    throw new Error(`atpRecordExists failed: unexpected status ${resp.status} for ${rkey}`)
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error("atpRecordExists: exhausted retries")
 }
 
 export async function atpApplyWritesCreate({
