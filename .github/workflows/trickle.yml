@@ -31,7 +31,7 @@ jobs:
       # this workflow so it stops running until the next bulk update.
       - name: Run sync and update cursor
         run: |
-          CURSOR=$(node src/sync.ts --max-pages 40)
+          CURSOR=$(node src/sync.ts --max-pages 30)
           gh variable list
           gh variable set CSW_CURSOR --body "${CURSOR}"
           if echo "${CURSOR}" | jq -e '.pending == null' > /dev/null; then
