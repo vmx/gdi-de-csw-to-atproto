@@ -84,11 +84,10 @@ export const putRecords = async (
     )
     console.error("Checking which records already exist...")
 
-    const existing = await Promise.all(
-      validRecords.map((r) =>
-        atpRecordExists(session.did, COLLECTION, toRkey(r)),
-      ),
-    )
+    const existing: boolean[] = []
+    for (const r of validRecords) {
+      existing.push(await atpRecordExists(session.did, COLLECTION, toRkey(r)))
+    }
 
     const newWrites = writes.filter((_, idx) => !existing[idx])
     console.error(
