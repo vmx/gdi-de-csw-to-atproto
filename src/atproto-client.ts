@@ -21,7 +21,7 @@ export interface AtpApplyWritesCreate {
 // TODO vmx 2026-01-21: add proper definition.
 export interface AtpApplyWritesCreateResp {}
 
-const PDS = "https://bsky.social"
+const PDS = process.env.ATP_PDS_URL ?? "https://bsky.social"
 
 const logRateLimits = (resp: Response) => {
   const rateLimits: { [key: string]: string } = {}
