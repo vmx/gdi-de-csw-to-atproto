@@ -11,6 +11,7 @@
  *
  * Options:
  *   --max-pages     Max pages per run (default: 1)
+ *   --sleep-ms      Sleep between pages in ms (default: 60000)
  *
  * Environment variables:
  *   TIME_OFFSET_DAYS  Shift "now" back by this many days (default: 0)
@@ -33,7 +34,7 @@ import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const PAGE_SIZE = 100
-const SLEEP_MS = 60_000 // 1 minute between pages
+const DEFAULT_SLEEP_MS = 60_000 // 1 minute between pages
 
 interface Cursor {
   lastRun: string | null
@@ -60,9 +61,11 @@ const main = async () => {
   const { values } = parseArgs({
     options: {
       "max-pages": { type: "string", default: "1" },
+      "sleep-ms": { type: "string", default: String(DEFAULT_SLEEP_MS) },
     },
   })
   const maxPages = parseInt(values["max-pages"], 10)
+  const sleepMs = parseInt(values["sleep-ms"], 10)
 
   const cursor = readCursor()
   const offsetMs =
@@ -129,8 +132,8 @@ const main = async () => {
       return
     }
 
-    console.error("Sleeping 1 minute before next page...")
-    await sleep(SLEEP_MS)
+    console.error(`Sleeping ${sleepMs / 1000}s before next page...`)
+    await sleep(sleepMs)
   }
 }
 
