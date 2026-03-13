@@ -76,6 +76,8 @@ Files
 - `src/atproto.ts` - ATProto convenience layer for posting metadata records
 - `src/node-cli.ts` - Node.js CLI entry point
 - `src/sync.ts` - GitHub Actions sync entry point (used by both sync and trickle workflows)
+- `src/tools/dump-csw.ts` - Dump CSW records to a JSONL file for deterministic replay
+- `src/tools/replay.ts` - Post records from a JSONL dump file to a PDS
 - `backfill.sh` - Backfill script for historical date ranges
 
 Development
