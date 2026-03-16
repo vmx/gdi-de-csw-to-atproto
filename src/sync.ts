@@ -104,7 +104,9 @@ const main = async () => {
     console.error(
       `Fetched ${result.records.length} records (${result.pagination.totalMatched} total matched)`,
     )
-    console.error(JSON.stringify(result.records, null, 2))
+    for (const record of result.records) {
+      console.error(JSON.stringify(record))
+    }
 
     if (result.records.length > 0) {
       if (!session) {
