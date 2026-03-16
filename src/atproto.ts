@@ -11,7 +11,7 @@ import {
 } from "./atproto-client.ts"
 import type { CswRecord } from "./csw-client.ts"
 
-const COLLECTION = "cx.vmx.dev.tmp003.matadisco"
+const COLLECTION = "cx.vmx.dev.tmp004.matadisco"
 
 /**
  * Create a session using BLUESKY_IDENTIFIER and BLUESKY_PASSWORD env vars
