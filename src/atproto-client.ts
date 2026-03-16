@@ -107,6 +107,7 @@ export async function atpApplyWritesCreate({
 
   const bodyStr = JSON.stringify(body)
   console.error(`applyWrites: ${writes.length} writes, ${Buffer.byteLength(bodyStr)} bytes`)
+  console.error(`Posting rkeys: ${JSON.stringify(writes.map((w) => w.rkey))}`)
 
   const resp = await fetch(url, {
     method: "POST",

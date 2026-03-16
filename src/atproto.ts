@@ -72,8 +72,6 @@ export const putRecords = async (
   const validRecords = records.filter((r) => r.identifier !== null)
   const writes = validRecords.map((r) => toWrite(endpoint, r))
 
-  console.error(`Posting rkeys: ${JSON.stringify(writes.map((w) => w.rkey))}`)
-
   try {
     await atpApplyWritesCreate({
       jwt: session.accessJwt,
