@@ -30,7 +30,7 @@ const logRateLimits = (resp: Response) => {
       rateLimits[key.replace(/^ratelimit-/, "")] = value
     }
   }
-  console.error(`Rate limits of ${resp.url}:`, JSON.stringify(rateLimits))
+  console.error(`${resp.status} Rate limits of ${resp.url}:`, JSON.stringify(rateLimits))
 }
 
 export async function atpCreateSession(
