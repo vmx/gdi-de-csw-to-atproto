@@ -41,6 +41,6 @@ jobs:
         env:
           CSW_CURSOR: ${{ vars.CSW_CURSOR }}
           ATP_PDS_URL: ${{ vars.ATP_PDS_URL }}
-          BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
+          BLUESKY_IDENTIFIER: ${{ vars.BLUESKY_IDENTIFIER }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
           GH_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB_ACTIONS }}
