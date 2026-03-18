@@ -34,7 +34,7 @@ import { fetchPage } from "./csw-client.ts"
 
 const DEFAULT_CSW_ENDPOINT = "https://gdk.gdi-de.org/geonetwork/srv/eng/csw"
 const PAGE_SIZE = 100
-const DEFAULT_SLEEP_MS = 60_000 // 1 minute between pages
+const DEFAULT_SLEEP_MS = 30_000 // 30 seconds between pages
 
 interface Cursor {
   lastRun: string | null

@@ -2,7 +2,7 @@ name: CSW Trickle
 
 on:
   schedule:
-    - cron: '*/53 * * * *'
+    - cron: '*/59 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -26,12 +26,12 @@ jobs:
 
       - run: npm ci
 
-      # Processes up to 10 pages of 200 records with 1-minute pauses
+      # Processes up to 15 pages of 100 records with 30s pauses
       # between pages. When all pending records are processed, disables
       # this workflow so it stops running until the next bulk update.
       - name: Run sync and update cursor
         run: |
-          CURSOR=$(node src/sync.ts --max-pages 30)
+          CURSOR=$(node src/sync.ts --max-pages 15)
           gh variable list
           gh variable set CSW_CURSOR --body "${CURSOR}"
           if echo "${CURSOR}" | jq -e '.pending == null' > /dev/null; then
