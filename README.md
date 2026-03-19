@@ -42,7 +42,7 @@ run simultaneously:
   one page of 100 records, posts them to ATProto. If there are more, it
   enables the trickle workflow.
 - **trickle** (`.github/workflows/trickle.yml`) — starts disabled, runs
-  every 59 minutes when enabled. Processes up to 15 pages of 100 records
+  every 59 minutes when enabled. Processes up to 10 pages of 100 records
   per run with 30-second pauses between pages, posting each page to
   ATProto. Disables itself when done.
 
