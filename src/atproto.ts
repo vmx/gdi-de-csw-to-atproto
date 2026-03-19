@@ -28,7 +28,7 @@ export const createSessionFromEnv = (): Promise<AtpSession> => {
   return atpCreateSession(identifier, password)
 }
 
-const metadataUrl = (endpoint: string, identifier: string): string =>
+const resourceUrl = (endpoint: string, identifier: string): string =>
   `${endpoint}?service=CSW&version=2.0.2&request=GetRecordById&id=${encodeURIComponent(identifier)}&elementsetname=full&outputSchema=http://www.isotc211.org/2005/gmd`
 
 const toRkey = (r: CswRecord): string => {
@@ -42,8 +42,8 @@ const toWrite = (endpoint: string, r: CswRecord) => ({
   collection: COLLECTION,
   rkey: toRkey(r),
   value: {
-    metadata: metadataUrl(endpoint, r.identifier!),
-    created: r.dateStamp,
+    resource: resourceUrl(endpoint, r.identifier!),
+    publishedAt: r.dateStamp,
     preview: r.abstract
       ? {
           mimeType: "text/plain",
