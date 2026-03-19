@@ -26,12 +26,12 @@ jobs:
 
       - run: npm ci
 
-      # Processes up to 10 pages of 100 records with 30s pauses
+      # Processes up to 5 pages of 100 records with 1-minute pauses
       # between pages. When all pending records are processed, disables
       # this workflow so it stops running until the next bulk update.
       - name: Run sync and update cursor
         run: |
-          CURSOR=$(node src/sync.ts --max-pages 10)
+          CURSOR=$(node src/sync.ts --max-pages 5)
           gh variable list
           gh variable set CSW_CURSOR --body "${CURSOR}"
           if echo "${CURSOR}" | jq -e '.pending == null' > /dev/null; then
